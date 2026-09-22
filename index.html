@@ -1,0 +1,1995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fusion Chess</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ==========================================================
+   Tokens
+   ========================================================== */
+:root {
+  --bg: #0d1417;
+  --panel: #131d21;
+  --panel-2: #182429;
+  --line: #24343a;
+  --text: #e7eee9;
+  --muted: #8ea39c;
+
+  --light: #d9e2cf;      /* casas claras: celadon */
+  --dark: #5f846f;       /* casas escuras: jade */
+  --frame-a: #2a3a36;
+  --frame-b: #131c1b;
+
+  --brass: #d4a94f;
+  --fusion: #8b6cff;
+  --fusion-2: #67e8f9;
+  --danger: #f0605d;
+
+  --board: clamp(300px, min(100vw - 24px, 100dvh - 210px), 680px);
+
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+html { scroll-padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
+
+* { box-sizing: border-box; margin: 0; }
+
+body {
+  min-height: 100%;
+  font-family: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: var(--text);
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(1100px 560px at 15% -10%, rgba(95, 132, 111, .20), transparent 60%),
+    radial-gradient(800px 480px at 105% 105%, rgba(139, 108, 255, .10), transparent 60%);
+  background-attachment: fixed;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button { font-family: inherit; color: inherit; }
+
+/* ==========================================================
+   Cabeçalho
+   ========================================================== */
+.top {
+  max-width: 1120px; margin: 0 auto;
+  padding: 14px 12px 6px;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
+}
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand-mark {
+  width: 46px; height: 46px; border-radius: 50%;
+  background: radial-gradient(circle at 30% 25%, #eef3ea, #b8c8ba);
+  display: grid; place-items: center;
+  box-shadow: 0 0 0 2px rgba(212, 169, 79, .55), 0 8px 20px -8px #000;
+}
+.brand-mark .hybrid { width: 100%; height: 100%; }
+.brand-mark .hybrid::before { width: 92%; -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1.5px)); mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1.5px)); }
+.brand-mark .hybrid .pc { width: 62%; height: 62%; }
+.brand h1 { font-family: 'DM Serif Display', Georgia, serif; font-weight: 400; font-size: 28px; line-height: 1; letter-spacing: .2px; }
+.brand p { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn {
+  font-weight: 700; font-size: 13px; line-height: 1;
+  min-height: 40px; padding: 0 14px; border-radius: 9px;
+  border: 1px solid var(--line); background: rgba(255, 255, 255, .02);
+  cursor: pointer; transition: background .15s, border-color .15s, transform .1s;
+}
+.btn:hover:not(:disabled) { background: rgba(255, 255, 255, .06); border-color: #3b4f55; }
+.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn:disabled { opacity: .38; cursor: not-allowed; }
+.btn.primary { background: var(--brass); border-color: var(--brass); color: #1b1406; }
+.btn.primary:hover:not(:disabled) { background: #e2b962; border-color: #e2b962; }
+.btn:focus-visible, .sq:focus-visible, .mode-chip:focus-visible, .rule-row:focus-visible { outline: 3px solid var(--brass); outline-offset: 2px; }
+
+/* ==========================================================
+   Palco
+   ========================================================== */
+.stage {
+  max-width: 1120px; margin: 0 auto; padding: 8px 12px 28px;
+  display: flex; gap: 32px; justify-content: center; align-items: flex-start;
+}
+.board-col { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+
+/* Jogadores */
+.tag { width: var(--board); min-height: 48px; padding: 6px 4px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.tag .dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #0007; flex-shrink: 0; transition: box-shadow .2s; }
+.tag .dot.w { background: linear-gradient(135deg, #fff, #d8ccb2); }
+.tag .dot.b { background: linear-gradient(135deg, #4a5060, #0b0d12); border-color: #7f889b; }
+.tag .name { font-weight: 700; font-size: 15px; }
+.tag .state { font-size: 12.5px; color: var(--muted); }
+.tag .state.alert { color: var(--danger); font-weight: 800; }
+.tag.active .dot { box-shadow: 0 0 0 4px rgba(212, 169, 79, .35); }
+.tag.active .name { color: #f4dfa8; }
+.tray {
+  margin-left: auto; min-height: 30px; padding: 2px 8px 2px 14px; border-radius: 999px;
+  background: var(--light); display: none; align-items: center; flex-wrap: wrap; justify-content: flex-end;
+}
+.tray.has { display: flex; }
+.tray .pc { width: 26px; height: 26px; margin-left: -8px; filter: none; }
+
+/* Moldura + tabuleiro */
+.frame {
+  width: var(--board); height: var(--board); padding: 10px; border-radius: 14px;
+  background: linear-gradient(145deg, var(--frame-a), var(--frame-b));
+  box-shadow: 0 34px 60px -26px #000, 0 0 0 1px rgba(212, 169, 79, .28), inset 0 1px 0 rgba(255, 255, 255, .07);
+}
+.board {
+  width: 100%; height: 100%; display: grid;
+  grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr);
+  border-radius: 4px; overflow: hidden;
+  outline: 1px solid rgba(212, 169, 79, .55);
+}
+.sq {
+  position: relative; display: block; padding: 0; border: 0; cursor: pointer;
+  background-color: var(--sq);
+  background-image: linear-gradient(160deg, rgba(255, 255, 255, .10), rgba(0, 0, 0, .07));
+}
+.sq.l { --sq: var(--light); --co: var(--dark); }
+.sq.d { --sq: var(--dark); --co: var(--light); }
+.sq::before { content: ''; position: absolute; inset: 0; pointer-events: none; }
+.sq.last::before { background: rgba(212, 169, 79, .42); }
+.sq.sel::before { background: rgba(212, 169, 79, .72); }
+.sq.check::before { background: radial-gradient(circle, rgba(240, 96, 93, .95) 0%, rgba(240, 96, 93, .55) 45%, transparent 78%); animation: pulse 1.1s ease-in-out infinite alternate; }
+@keyframes pulse { from { opacity: .65; } to { opacity: 1; } }
+
+.co {
+  position: absolute; z-index: 1; pointer-events: none; color: var(--co);
+  font-size: clamp(9px, calc(var(--board) / 50), 13px); font-weight: 800; line-height: 1;
+}
+.co.rank { top: 4px; left: 5px; }
+.co.file { bottom: 4px; right: 5px; }
+
+/* Marcadores de movimento */
+.mk { position: absolute; z-index: 4; pointer-events: none; }
+.mk.move { left: 36%; top: 36%; width: 28%; height: 28%; border-radius: 50%; background: rgba(12, 22, 20, .30); }
+.mk.capture { inset: 4%; border-radius: 50%; border: 5px solid rgba(232, 74, 74, .85); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .25), 0 0 10px rgba(232, 74, 74, .55); }
+.mk.merge {
+  inset: 5%; border-radius: 50%; border: 3px solid #c3adff;
+  box-shadow: 0 0 0 3px rgba(139, 108, 255, .4), 0 0 16px rgba(139, 108, 255, .85), inset 0 0 14px rgba(139, 108, 255, .55);
+}
+
+/* Efeitos de jogada */
+.sq.fx-capture::after, .sq.fx-merge::after {
+  content: ''; position: absolute; inset: 0; z-index: 6; pointer-events: none;
+  animation: flash .6s ease-out forwards;
+}
+.sq.fx-capture::after { background: radial-gradient(circle, rgba(240, 96, 93, .95), transparent 65%); }
+.sq.fx-merge::after { background: radial-gradient(circle, rgba(167, 139, 250, 1), rgba(103, 232, 249, .5) 40%, transparent 68%); }
+@keyframes flash { from { opacity: 1; transform: scale(.35); } to { opacity: 0; transform: scale(1.7); } }
+
+/* ==========================================================
+   Peças
+   ========================================================== */
+.piece { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; pointer-events: none; }
+.piece .pc { width: 92%; height: 92%; filter: drop-shadow(0 3px 2px rgba(0, 0, 0, .38)); }
+.piece.slide { z-index: 7; animation: slide .26s cubic-bezier(.22, .8, .25, 1); }
+@keyframes slide { from { transform: translate(var(--dx), var(--dy)); } }
+
+/* Unidade fundida */
+.hybrid { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+.hybrid::before {
+  content: ''; position: absolute; width: 94%; aspect-ratio: 1; border-radius: 50%;
+  background: conic-gradient(var(--fusion), var(--fusion-2), #c3adff, var(--fusion));
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3.5px), #000 calc(100% - 3px));
+          mask: radial-gradient(farthest-side, transparent calc(100% - 3.5px), #000 calc(100% - 3px));
+  filter: drop-shadow(0 0 6px rgba(139, 108, 255, .9));
+  animation: spin 10s linear infinite;
+}
+.hybrid::after {
+  content: ''; position: absolute; width: 84%; aspect-ratio: 1; border-radius: 50%;
+  background: radial-gradient(circle, rgba(139, 108, 255, .34), transparent 70%);
+}
+.hybrid .pc { position: relative; z-index: 1; flex: none; width: 68%; height: 68%; margin: 0 -13%; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .4)); }
+.hybrid .pc:nth-of-type(2) { z-index: 2; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ==========================================================
+   Painel lateral
+   ========================================================== */
+.side {
+  width: 340px; flex-shrink: 0; height: calc(var(--board) + 96px);
+  display: flex; flex-direction: column;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 16px; overflow: hidden;
+}
+.status { padding: 18px 20px 16px; }
+.status-title { font-family: 'DM Serif Display', Georgia, serif; font-size: 30px; line-height: 1.1; }
+.status-sub { margin-top: 6px; font-size: 13.5px; color: var(--muted); line-height: 1.4; min-height: 19px; }
+.status-sub.alert { color: var(--danger); font-weight: 700; }
+.mode-chip {
+  margin-top: 12px; display: inline-flex; align-items: center; gap: 8px; min-height: 34px; padding: 0 13px;
+  border-radius: 999px; border: 1px solid var(--line); background: rgba(255, 255, 255, .02);
+  font-size: 12.5px; font-weight: 700; color: #c5d3cd; cursor: pointer; transition: border-color .15s, background .15s;
+}
+.mode-chip small { font-size: 12px; font-weight: 600; color: var(--muted); }
+.mode-chip:hover { border-color: #3b4f55; background: rgba(255, 255, 255, .05); }
+.mode-chip[data-mode="chaos"] { border-color: rgba(240, 96, 93, .5); }
+.mode-chip[data-mode="custom"] { border-color: rgba(139, 108, 255, .55); }
+.mode-chip[data-mode="versus"] { border-color: rgba(212, 169, 79, .6); }
+
+.section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 11px 20px; border-top: 1px solid var(--line); background: var(--panel-2);
+  font-size: 13px; font-weight: 700; color: #c5d3cd;
+}
+.section-head .count { font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+.section-head .right { display: flex; align-items: center; gap: 12px; }
+.review-bar { display: flex; align-items: center; gap: 8px; padding: 0 20px 14px; }
+.review-bar[hidden] { display: none; }
+.review-bar .review-pos { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; margin-left: 2px; }
+.review-bar .btn.mini { min-width: 34px; justify-content: center; padding: 0; }
+.btn.mini { min-height: 34px; padding: 0 11px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
+.btn.mini svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.btn.mini.done { border-color: #67e8f9; color: #67e8f9; }
+.btn.mini.fail { border-color: var(--danger); color: var(--danger); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.history { flex: 1; min-height: 0; overflow-y: auto; list-style: none; padding: 6px 8px; scrollbar-width: thin; scrollbar-color: #33464c transparent; }
+.history li { display: grid; grid-template-columns: 26px 1fr 1fr; gap: 6px; align-items: center; padding: 4px 8px; border-radius: 8px; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+.history li:nth-child(odd) { background: rgba(255, 255, 255, .02); }
+.history .n { color: #607a73; font-weight: 700; }
+.history .mv { display: flex; align-items: center; gap: 6px; min-height: 28px; }
+.history .mv.new { color: #f4dfa8; }
+.chip { display: inline-flex; align-items: center; padding: 1px 4px 1px 8px; border-radius: 999px; background: var(--light); flex-shrink: 0; }
+.chip .pc { width: 20px; height: 20px; margin-left: -6px; filter: none; }
+.sym { color: var(--muted); font-weight: 700; }
+.sym.fuse { color: #b39dff; }
+.link { width: 16px; height: 10px; fill: none; stroke: #b39dff; stroke-width: 1.6; flex-shrink: 0; }
+.sym.cap { color: #f08b88; }
+.history li.empty { display: grid; grid-template-columns: 1fr; place-items: center; height: 100%; padding: 16px; text-align: center; font-size: 13px; color: #60766f; background: none; }
+
+.fusion-note { border-top: 1px solid var(--line); padding: 14px 20px 16px; display: flex; gap: 14px; align-items: center; }
+.demo { position: relative; width: 74px; height: 74px; flex-shrink: 0; border-radius: 12px; background: var(--light); }
+.fusion-note p { font-size: 12.5px; line-height: 1.5; color: var(--muted); }
+.fusion-note strong { color: var(--text); font-weight: 700; }
+
+/* ==========================================================
+   Modais
+   ========================================================== */
+.overlay {
+  position: fixed; inset: 0; z-index: 50; display: none; align-items: center; justify-content: center; padding: 16px;
+  background: rgba(5, 9, 10, .74); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+.overlay.open { display: flex; }
+.sheet {
+  width: 100%; max-width: 470px; max-height: 88dvh; overflow-y: auto; padding: 26px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 18px;
+  box-shadow: 0 40px 80px -30px #000; animation: rise .22s ease-out;
+}
+@keyframes rise { from { opacity: 0; transform: translateY(10px) scale(.98); } }
+.sheet h2 { font-family: 'DM Serif Display', Georgia, serif; font-weight: 400; font-size: 30px; line-height: 1.1; }
+.sheet .lead { margin-top: 6px; font-size: 14px; color: var(--muted); line-height: 1.5; }
+.sheet .foot { display: flex; gap: 10px; margin-top: 22px; }
+.sheet .foot .btn { flex: 1; min-height: 46px; }
+
+.rule { display: grid; grid-template-columns: 84px 1fr; gap: 16px; padding: 16px 0; border-top: 1px solid var(--line); }
+.rule:first-of-type { margin-top: 18px; }
+.rule .art { position: relative; width: 84px; height: 84px; border-radius: 12px; background: var(--light); display: grid; place-items: center; overflow: hidden; }
+.rule .art > .pc { width: 80%; height: 80%; }
+.rule h3 { font-size: 15px; font-weight: 800; margin-bottom: 4px; }
+.rule p { font-size: 13.5px; line-height: 1.5; color: #b3c3bd; }
+.rule .art .arrow { color: #38524a; font-weight: 800; font-size: 20px; margin: 0 -2px; z-index: 3; position: relative; }
+.rule .art .badge { position: absolute; left: 0; right: 0; bottom: 6px; text-align: center; font-size: 11px; font-weight: 800; color: #38524a; z-index: 3; }
+.rule .art.row { display: flex; align-items: center; justify-content: center; gap: 0; }
+.rule .art.row > .pc { width: 42%; height: 42%; }
+
+.promo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+.promo-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 8px 12px;
+  border-radius: 12px; border: 1px solid var(--line); background: var(--panel-2); cursor: pointer; font-weight: 700; font-size: 13px;
+  transition: border-color .15s, transform .1s;
+}
+.promo-btn .box { width: 74px; height: 74px; border-radius: 10px; background: var(--light); display: grid; place-items: center; }
+.promo-btn .pc { width: 88%; height: 88%; }
+.promo-btn:hover:not(:disabled) { border-color: var(--brass); transform: translateY(-2px); }
+.promo-btn:disabled { opacity: .35; cursor: not-allowed; }
+.promo-btn small { font-weight: 500; font-size: 11px; color: var(--muted); text-align: center; line-height: 1.3; }
+
+.medals { display: flex; justify-content: center; gap: 10px; margin: 4px 0 16px; }
+.medal { width: 104px; height: 104px; border-radius: 50%; background: radial-gradient(circle at 30% 25%, #eef3ea, #b8c8ba); display: grid; place-items: center; box-shadow: 0 0 0 3px rgba(212, 169, 79, .6); }
+.medal .pc { width: 84%; height: 84%; }
+.center { text-align: center; }
+
+/* Configuração da partida */
+.field { margin-top: 20px; }
+.field-label { font-size: 13px; font-weight: 700; color: #c5d3cd; margin-bottom: 8px; }
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; padding: 4px; border-radius: 12px; background: var(--panel-2); border: 1px solid var(--line); }
+.seg button { min-height: 42px; padding: 0 8px; border: 0; border-radius: 9px; background: transparent; color: var(--muted); font-weight: 700; font-size: 13.5px; cursor: pointer; transition: background .15s, color .15s; }
+.seg button:hover { background: rgba(255, 255, 255, .06); color: var(--text); }
+.seg button[aria-checked="true"] { background: var(--brass); color: #1b1406; }
+.seg button:focus-visible { outline: 3px solid var(--brass); outline-offset: 2px; }
+.hint { margin-top: 10px; font-size: 13px; line-height: 1.5; color: var(--muted); min-height: 60px; }
+.hint.short { min-height: 40px; margin-bottom: 10px; }
+
+/* Lista de regras (Nova partida) */
+.rule-list { display: flex; flex-direction: column; gap: 6px; }
+.rule-row {
+  display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; padding: 10px 12px;
+  border-radius: 11px; border: 1px solid var(--line); background: var(--panel-2); cursor: pointer;
+  transition: border-color .15s;
+}
+.rule-row:not(:disabled):hover { border-color: #3b4f55; }
+.rule-row:disabled { cursor: default; }
+.rule-row .txt { flex: 1; min-width: 0; }
+.rule-row strong { display: block; font-size: 13.5px; font-weight: 700; }
+.rule-row small { display: block; margin-top: 2px; font-size: 12px; line-height: 1.4; color: var(--muted); }
+.sw { position: relative; width: 42px; height: 24px; border-radius: 999px; background: #2b3b40; flex-shrink: 0; transition: background .15s; }
+.sw::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #9fb3ac; transition: transform .15s, background .15s; }
+.rule-row[aria-checked="true"] .sw { background: var(--brass); }
+.rule-row[aria-checked="true"] .sw::after { transform: translateX(18px); background: #1b1406; }
+.rule-row:disabled .sw { opacity: .55; }
+
+/* Regras da partida (modal Regras) */
+.rules-head { margin-top: 8px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 13px; font-weight: 700; color: #c5d3cd; }
+.rules-head span { color: var(--muted); font-weight: 600; }
+.rule.off { opacity: .5; }
+.rule.off .art { filter: grayscale(1); }
+.rule h3 .pill { margin-left: 6px; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; vertical-align: 1px; border: 1px solid var(--line); color: var(--muted); }
+.rule h3 .pill.on { border-color: rgba(212, 169, 79, .6); color: var(--brass); }
+.tag .role { font-size: 11.5px; font-weight: 700; padding: 2px 9px; border-radius: 999px; border: 1px solid var(--line); color: #b3c3bd; }
+.tag .role.fusion { border-color: rgba(139, 108, 255, .6); color: #c3adff; }
+.tag .role.classic { border-color: rgba(212, 169, 79, .55); color: #e6c982; }
+
+/* ==========================================================
+   Peças (SVG) – tamanhos utilitários
+   ========================================================== */
+.pc { display: block; overflow: visible; }
+
+/* ==========================================================
+   Responsivo
+   ========================================================== */
+@media (max-width: 1099px) {
+  .stage { flex-direction: column; align-items: center; gap: 18px; }
+  .side { width: var(--board); height: auto; }
+  .history { max-height: 220px; min-height: 120px; flex: none; }
+}
+.btn[aria-pressed="false"] { color: var(--muted); }
+@media (max-width: 520px) {
+  .snd { display: none; }
+  .btn[aria-pressed="false"] { text-decoration: line-through; }
+  .brand h1 { font-size: 24px; }
+  .actions { width: 100%; }
+  .actions .btn { flex: 1 1 auto; padding: 0 10px; }
+  .status-title { font-size: 26px; }
+  .rule { grid-template-columns: 68px 1fr; gap: 12px; }
+  .rule .art { width: 68px; height: 68px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- Gradients shared by the pieces -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="g-ivory" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#c9bda3"/><stop offset=".32" stop-color="#fffdf5"/>
+      <stop offset=".62" stop-color="#f0e7d0"/><stop offset="1" stop-color="#b3a68b"/>
+    </linearGradient>
+    <linearGradient id="g-ink" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#0d0f14"/><stop offset=".3" stop-color="#4e5566"/>
+      <stop offset=".6" stop-color="#1d212b"/><stop offset="1" stop-color="#07080b"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<header class="top">
+  <div class="brand">
+    <div class="brand-mark" id="brand-mark" aria-hidden="true"></div>
+    <div>
+      <h1>Fusion Chess</h1>
+      <p>Fuse pieces. Conquer the board.</p>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn" id="btn-undo" onclick="undo()">Undo</button>
+    <button class="btn" id="btn-back" onclick="reviewBack()" title="Step back one move">Back</button>
+    <button class="btn" id="btn-resume" onclick="reviewJumpLive()" hidden>Back to current</button>
+    <button class="btn" id="btn-ai-pause" onclick="toggleAiPause()" hidden>Pause</button>
+    <button class="btn" id="btn-ai-step" onclick="aiStep()" hidden>Next move</button>
+    <button class="btn" onclick="flipBoard()">Flip</button>
+    <button class="btn" id="btn-sound" onclick="toggleSound()" aria-pressed="true">Sound<span class="snd"> on</span></button>
+    <button class="btn" onclick="openRules()">Rules</button>
+    <button class="btn primary" onclick="openSetup()">New game</button>
+  </div>
+</header>
+
+<main class="stage">
+  <section class="board-col" aria-label="Board">
+    <div class="tag" id="tag-top"></div>
+    <div class="frame"><div class="board" id="board" role="grid" aria-label="Chess board"></div></div>
+    <div class="tag" id="tag-bottom"></div>
+  </section>
+
+  <aside class="side" aria-label="Game">
+    <div class="status" aria-live="polite">
+      <div class="status-title" id="status-title">White's turn</div>
+      <div class="status-sub" id="status-sub">Tap a piece to see its moves.</div>
+      <button type="button" class="mode-chip" id="mode-chip" onclick="openRules()" title="View the rules for this game"></button>
+    </div>
+    <div class="review-bar" id="review-bar" hidden>
+      <button type="button" class="btn mini" id="btn-review-back" onclick="reviewBack()" title="Previous move">
+        <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M11 3 L5 8 L11 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button type="button" class="btn mini" id="btn-review-play" onclick="toggleReviewPlay()" title="Play / pause">
+        <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" id="review-play-icon"><path d="M5 3 L13 8 L5 13 Z"/></svg>
+      </button>
+      <button type="button" class="btn mini" id="btn-review-forward" onclick="reviewForward()" title="Next move">
+        <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M5 3 L11 8 L5 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="review-pos" id="review-pos">Move 0 / 0</span>
+    </div>
+    <div class="section-head">
+      <span>Moves</span>
+      <span class="right">
+        <span class="count" id="move-count">0</span>
+        <button type="button" class="btn mini" id="btn-copy" onclick="copyHistory()" disabled title="Copy the move and fusion history">
+          <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><rect x="5.5" y="5.5" width="8" height="8" rx="1.8"/><path d="M10.5 3.5V3.3C10.5 2.3 9.7 1.5 8.7 1.5H3.8C2.8 1.5 2 2.3 2 3.3v4.9c0 1 .8 1.8 1.8 1.8h.2"/></svg>
+          <span id="copy-label">Copy</span>
+        </button>
+        <span class="sr-only" id="copy-status" aria-live="polite"></span>
+      </span>
+    </div>
+    <ol class="history" id="history"></ol>
+    <div class="fusion-note">
+      <div class="demo" id="demo-hybrid" aria-hidden="true"></div>
+      <p id="fusion-note-text"></p>
+    </div>
+  </aside>
+</main>
+
+<!-- Promotion -->
+<div class="overlay" id="modal-promotion" role="dialog" aria-modal="true" aria-labelledby="promo-title">
+  <div class="sheet center">
+    <h2 id="promo-title">Promote the pawn</h2>
+    <p class="lead" id="promo-lead">Choose the new piece. The other half of the unit stays the same.</p>
+    <div class="promo-grid" id="promo-grid"></div>
+  </div>
+</div>
+
+<!-- Rules -->
+<div class="overlay" id="modal-rules" role="dialog" aria-modal="true" aria-labelledby="rules-title">
+  <div class="sheet">
+    <h2 id="rules-title">Fusion rules</h2>
+    <p class="lead" id="rules-lead">Chess as usual, with one extra move: fuse two of your pieces into one.</p>
+
+    <div class="rule">
+      <div class="art" id="art-fuse"></div>
+      <div><h3>Fuse</h3><p>Move a piece onto another of the same color (violet square). They become one unit with the moves of both. Fusing uses up your turn.</p></div>
+    </div>
+    <div class="rule">
+      <div class="art row" id="art-limits"></div>
+      <div><h3>Limits</h3><p>At most two pieces per square. A fused unit cannot fuse again. The King is left out.</p></div>
+    </div>
+    <div class="rule">
+      <div class="art" id="art-unit"></div>
+      <div><h3>Absolute unit</h3><p>Fusion is permanent. The unit moves together and is captured together: both pieces leave the board at once.</p></div>
+    </div>
+    <div class="rule">
+      <div class="art" id="art-promo"></div>
+      <div><h3>Promotion</h3><p>If a unit containing a pawn reaches the last rank, only the pawn is promoted. The other piece stays the same.</p></div>
+    </div>
+
+    <div class="rules-head" id="rules-head"></div>
+    <div id="rules-dynamic"></div>
+
+    <div class="foot"><button class="btn primary" onclick="closeModal('modal-rules')">Got it, let's play</button></div>
+  </div>
+</div>
+
+<!-- New game -->
+<div class="overlay" id="modal-setup" role="dialog" aria-modal="true" aria-labelledby="setup-title">
+  <div class="sheet">
+    <h2 id="setup-title">New game</h2>
+    <p class="lead">Choose the game mode, who to play against, and which rules to use.</p>
+
+    <div class="field" style="margin-top:18px">
+      <div class="field-label" id="lbl-gm">Game mode</div>
+      <div class="seg" role="radiogroup" aria-labelledby="lbl-gm" id="seg-gamemode">
+        <button type="button" role="radio" data-v="fusion" onclick="pickSetup('gameMode', 'fusion')">Fusion Chess</button>
+        <button type="button" role="radio" data-v="versus" onclick="pickSetup('gameMode', 'versus')">Classic vs Fusion</button>
+      </div>
+      <p class="hint short" id="gm-hint"></p>
+    </div>
+
+    <div class="field" id="field-fusionside" style="margin-top:4px">
+      <div class="field-label" id="lbl-fside">Who plays Fusion</div>
+      <div class="seg" role="radiogroup" aria-labelledby="lbl-fside" id="seg-fusionside">
+        <button type="button" role="radio" data-v="white" onclick="pickSetup('fusionSide', 'white')">White</button>
+        <button type="button" role="radio" data-v="black" onclick="pickSetup('fusionSide', 'black')">Black</button>
+      </div>
+      <p class="hint short" style="margin-bottom:0">The other side plays classic chess, with no fusions.</p>
+    </div>
+
+    <div class="field">
+      <div class="field-label" id="lbl-opp">Opponent</div>
+      <div class="seg" role="radiogroup" aria-labelledby="lbl-opp" id="seg-opponent">
+        <button type="button" role="radio" data-v="human" onclick="pickSetup('opponent', 'human')">Two players</button>
+        <button type="button" role="radio" data-v="easy" onclick="pickSetup('opponent', 'easy')">Easy AI</button>
+        <button type="button" role="radio" data-v="medium" onclick="pickSetup('opponent', 'medium')">Medium AI</button>
+        <button type="button" role="radio" data-v="hard" onclick="pickSetup('opponent', 'hard')">Strong AI</button>
+        <button type="button" role="radio" data-v="ai_vs_ai" onclick="pickSetup('opponent', 'ai_vs_ai')">AI vs AI</button>
+      </div>
+      <p class="hint" id="opp-hint"></p>
+    </div>
+
+    <div class="field" id="field-side" style="margin-top:4px">
+      <div class="field-label" id="lbl-side">You play as</div>
+      <div class="seg" role="radiogroup" aria-labelledby="lbl-side" id="seg-side">
+        <button type="button" role="radio" data-v="white" onclick="pickSetup('side', 'white')">White</button>
+        <button type="button" role="radio" data-v="black" onclick="pickSetup('side', 'black')">Black</button>
+      </div>
+    </div>
+
+    <div class="field" id="field-aivai" style="margin-top:4px">
+      <div class="field-label" id="lbl-ai-white">White's difficulty</div>
+      <div class="seg" role="radiogroup" aria-labelledby="lbl-ai-white" id="seg-ai-white">
+        <button type="button" role="radio" data-v="easy" onclick="pickSetup('aiWhite', 'easy')">Easy</button>
+        <button type="button" role="radio" data-v="medium" onclick="pickSetup('aiWhite', 'medium')">Medium</button>
+        <button type="button" role="radio" data-v="hard" onclick="pickSetup('aiWhite', 'hard')">Strong</button>
+      </div>
+      <div class="field-label" id="lbl-ai-black" style="margin-top:10px">Black's difficulty</div>
+      <div class="seg" role="radiogroup" aria-labelledby="lbl-ai-black" id="seg-ai-black">
+        <button type="button" role="radio" data-v="easy" onclick="pickSetup('aiBlack', 'easy')">Easy</button>
+        <button type="button" role="radio" data-v="medium" onclick="pickSetup('aiBlack', 'medium')">Medium</button>
+        <button type="button" role="radio" data-v="hard" onclick="pickSetup('aiBlack', 'hard')">Strong</button>
+      </div>
+      <div class="field-label" id="lbl-ai-speed" style="margin-top:10px">Move speed</div>
+      <div class="seg" role="radiogroup" aria-labelledby="lbl-ai-speed" id="seg-ai-speed">
+        <button type="button" role="radio" data-v="slow" onclick="pickSetup('aiSpeed', 'slow')">Slow</button>
+        <button type="button" role="radio" data-v="normal" onclick="pickSetup('aiSpeed', 'normal')">Normal</button>
+        <button type="button" role="radio" data-v="fast" onclick="pickSetup('aiSpeed', 'fast')">Fast</button>
+      </div>
+      <p class="hint short">You can pause and step through the game move by move at any time.</p>
+    </div>
+
+    <div class="field" id="field-mode">
+      <div class="field-label" id="lbl-mode">Fusion rules</div>
+      <div class="seg" role="radiogroup" aria-labelledby="lbl-mode" id="seg-mode">
+        <button type="button" role="radio" data-v="balanced" onclick="pickSetup('mode', 'balanced')">Balanced</button>
+        <button type="button" role="radio" data-v="chaos" onclick="pickSetup('mode', 'chaos')">Chaos</button>
+        <button type="button" role="radio" data-v="custom" onclick="pickSetup('mode', 'custom')">Custom</button>
+      </div>
+      <p class="hint short" id="mode-hint"></p>
+      <div class="rule-list" id="rule-list"></div>
+    </div>
+
+    <div class="foot">
+      <button class="btn" onclick="closeModal('modal-setup')">Cancel</button>
+      <button class="btn primary" onclick="applySetup()">Start</button>
+    </div>
+  </div>
+</div>
+
+<!-- Game over -->
+<div class="overlay" id="modal-gameover" role="dialog" aria-modal="true" aria-labelledby="over-title">
+  <div class="sheet center">
+    <div class="medals" id="over-medals"></div>
+    <h2 id="over-title">Checkmate</h2>
+    <p class="lead" id="over-desc"></p>
+    <div class="foot">
+      <button class="btn" onclick="closeModal('modal-gameover')">View board</button>
+      <button class="btn primary" onclick="closeModal('modal-gameover'); resetGame();">Play again</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ==========================================================
+   1. Constantes e utilidades
+   ========================================================== */
+const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+const NAMES = { king: 'King', queen: 'Queen', rook: 'Rook', bishop: 'Bishop', knight: 'Knight', pawn: 'Pawn' };
+const VALUE = { queen: 5, rook: 4, bishop: 3, knight: 2, pawn: 1, king: 0 };
+const SIDE_NAME = { white: 'White', black: 'Black' };
+
+/* Regras opcionais da fusão. As regras estruturais (Rei não funde, no máximo duas peças
+   por casa, unidade fundida não funde de novo) valem sempre e não aparecem aqui. */
+const RULE_DEFS = [
+  { key: 'noKnightQueen', title: 'Knight + Queen', short: 'Knight and Queen cannot fuse.' },
+  { key: 'noRookBishop',  title: 'Rook + Bishop',   short: 'Rook and Bishop cannot fuse.' },
+  { key: 'cooldown',      title: 'Fusion cooldown', short: 'After fusing, the next move cannot be a fusion.' },
+  { key: 'promoDiff',     title: 'Different promotion', short: 'A fused pawn can only become a piece different from its partner.' }
+];
+const MODE_LABEL = { balanced: 'Balanced', chaos: 'Chaos', custom: 'Custom' };
+const allRules = (on) => Object.fromEntries(RULE_DEFS.map((d) => [d.key, on]));
+/* Regras efetivas de uma configuração: Balanceado = todas, Caos = nenhuma, Personalizado = escolha do jogador */
+const rulesFor = (s) => (s.mode === 'balanced' ? allRules(true) : s.mode === 'chaos' ? allRules(false) : { ...allRules(false), ...s.custom });
+
+const $ = (id) => document.getElementById(id);
+const inBounds = (r, c) => r >= 0 && r < 8 && c >= 0 && c < 8;
+const other = (color) => (color === 'white' ? 'black' : 'white');
+const sqName = (r, c) => `${FILES[c]}${8 - r}`;
+const cloneBoard = (b) => b.map((row) => row.map((cell) => cell.map((p) => ({ ...p }))));
+
+/* Chave de posição (tabuleiro + quem move) usada para detectar repetição.
+   Letras no padrão SAN (peão=p, cavalo=n, bispo=b, torre=r, dama=q, rei=k);
+   maiúscula = Brancas. Casas fundidas entram ordenadas para não depender da ordem interna. */
+const POS_LETTER = { pawn: 'p', knight: 'n', bishop: 'b', rook: 'r', queen: 'q', king: 'k' };
+function positionKey(board, turn) {
+  let s = turn === 'white' ? 'w' : 'b';
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const cell = board[r][c];
+      if (!cell.length) continue;
+      const letters = cell.map((p) => (p.color === 'white' ? POS_LETTER[p.type].toUpperCase() : POS_LETTER[p.type])).sort();
+      s += `${r}${c}${letters.join('')}`;
+    }
+  }
+  return s;
+}
+/* Conta quantas vezes a posição atual (tabuleiro + turno) já apareceu nos quadros da partida */
+function countRepetitions() {
+  const key = positionKey(G.board, G.turn);
+  let count = 0;
+  for (const f of G.frames) if ((f.key || (f.key = positionKey(f.board, f.turnToMove))) === key) count++;
+  return count;
+}
+/* Lances desde a última captura, fusão ou movimento de peão (regra dos 50 lances = 100 meios-lances) */
+function halfmoveClock() {
+  let n = 0;
+  for (let i = G.history.length - 1; i >= 0; i--) {
+    const h = G.history[i];
+    if (h.kind !== 'move' || h.pieces.includes('pawn')) break;
+    n++;
+  }
+  return n;
+}
+
+function pieceLabel(p) {
+  const col = p.color === 'white' ? 'White' : 'Black';
+  return `${col} ${NAMES[p.type]}`;
+}
+
+/* ==========================================================
+   2. Peças em SVG (desenhadas em uma grade 100×100)
+   ========================================================== */
+const BASE = `<rect x="22" y="80" width="56" height="10" rx="4.5"/><rect x="29" y="72" width="42" height="9" rx="3.5"/>`;
+
+const SHAPES = {
+  pawn: `
+    <circle cx="50" cy="29" r="11"/>
+    <rect x="37" y="40" width="26" height="6" rx="3"/>
+    <path d="M42 46 C42 59 38 67 31 73 H69 C62 67 58 59 58 46 Z"/>`,
+  rook: `
+    <path d="M29 15 H40 V23 H45 V15 H55 V23 H60 V15 H71 V32 H29 Z"/>
+    <path d="M33 32 H67 L64 41 H36 Z"/>
+    <path d="M37 41 H63 L67 73 H33 Z"/>`,
+  bishop: `
+    <circle cx="50" cy="13" r="5"/>
+    <path d="M50 19 C65 27 69 42 60 52 H40 C31 42 35 27 50 19 Z"/>
+    <rect x="35" y="51" width="30" height="8" rx="4"/>
+    <path d="M41 59 C41 67 38 70 33 73 H67 C62 70 59 67 59 59 Z"/>`,
+  knight: `
+    <path d="M31 73 C29 60 38 53 44 45 C38 47 33 50 27 50 C21 50 18 45 21 40 C24 34 32 27 35 19 L34 10 L43 16 C48 14 53 14 58 16 L63 9 L64 20 C76 29 80 50 76 62 C74 68 73 71 74 73 Z"/>`,
+  queen: `
+    <path d="M23 33 L33 56 H67 L77 33 L67 44 L64 27 L57 43 L50 24 L43 43 L36 27 L33 44 Z"/>
+    <circle cx="23" cy="30" r="4"/><circle cx="36" cy="24" r="4"/><circle cx="50" cy="20" r="4"/>
+    <circle cx="64" cy="24" r="4"/><circle cx="77" cy="30" r="4"/>
+    <rect x="32" y="55" width="36" height="7" rx="3.5"/>
+    <path d="M37 62 C37 68 34 71 30 73 H70 C66 71 63 68 63 62 Z"/>`,
+  king: `
+    <path d="M46 5 H54 V11 H60 V18 H54 V26 H46 V18 H40 V11 H46 Z"/>
+    <path d="M50 26 C68 26 75 40 71 54 H29 C25 40 32 26 50 26 Z"/>
+    <rect x="28" y="53" width="44" height="8" rx="4"/>
+    <path d="M36 61 C36 68 33 71 29 73 H71 C67 71 64 68 64 61 Z"/>`
+};
+
+/* Traços de acabamento (brilho, olho, crina). {D} = cor de detalhe */
+const DETAILS = {
+  pawn: `<path d="M44 25 A7 7 0 0 1 50 22"/><path d="M46 52 C46 61 43 67 39 71"/>`,
+  rook: `<path d="M38 20 V29"/><path d="M41 47 L39 67"/><path d="M36 36 H64" opacity=".5"/>`,
+  bishop: `<path d="M45 39 L56 31"/><path d="M44 33 C45 29 47 27 49 25"/><path d="M45 63 C45 66 43 68 41 70"/>`,
+  knight: `<circle cx="36" cy="29" r="2.3" fill="{D}" stroke="none"/><path d="M60 24 C70 33 71 50 66 62"/><path d="M23 43 L25 44"/><path d="M40 58 C42 54 44 52 46 50" opacity=".6"/>`,
+  queen: `<path d="M40 48 L37 36"/><path d="M60 48 L63 36"/><path d="M50 32 V49"/><path d="M42 66 C42 68 40 70 38 71"/>`,
+  king: `<path d="M50 32 V50"/><path d="M40 37 C41 33 44 31 47 30"/><path d="M42 66 C42 68 40 70 38 71"/><path d="M48 9 V22" opacity=".55"/>`
+};
+
+function pieceSVG(type, color, cls = '') {
+  const white = color === 'white';
+  const fill = white ? 'url(#g-ivory)' : 'url(#g-ink)';
+  const stroke = white ? '#3d3324' : '#020304';
+  const detail = white ? '#a99b80' : '#a5aec4';
+  return `<svg class="pc ${cls}" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+    <g fill="${fill}" stroke="${stroke}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">${SHAPES[type]}${BASE}</g>
+    <g fill="none" stroke="${detail}" stroke-width="1.7" stroke-linecap="round" opacity=".9">${DETAILS[type].replace(/\{D\}/g, detail)}</g>
+  </svg>`;
+}
+
+/* Uma unidade = 1 peça, ou 2 peças fundidas com anel de energia */
+function unitHTML(types, color) {
+  if (types.length === 1) return pieceSVG(types[0], color);
+  return `<div class="hybrid">${types.map((t) => pieceSVG(t, color)).join('')}</div>`;
+}
+function chipHTML(types, color) {
+  return `<span class="chip">${types.map((t) => pieceSVG(t, color)).join('')}</span>`;
+}
+
+/* ==========================================================
+   3. Som (Web Audio)
+   ========================================================== */
+let soundEnabled = true;
+let audioCtx = null;
+
+function getAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+const SOUNDS = {
+  move:    { type: 'sine',     f: [[350, 0], [200, .1]],                     dur: .1,  vol: .2,  ramp: true },
+  capture: { type: 'sawtooth', f: [[120, 0], [50, .15]],                     dur: .15, vol: .3,  ramp: true },
+  merge:   { type: 'sine',     f: [[130, 0], [220, .25]],                    dur: .3,  vol: .35, ramp: true },
+  check:   { type: 'square',   f: [[400, 0], [600, .1]],                     dur: .3,  vol: .15, ramp: false },
+  win:     { type: 'triangle', f: [[440, 0], [554.37, .15], [659.25, .3]],   dur: .6,  vol: .3,  ramp: false }
+};
+
+function playSound(name) {
+  if (!soundEnabled) return;
+  try {
+    const s = SOUNDS[name];
+    const ctx = getAudio();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    const t = ctx.currentTime;
+    osc.type = s.type;
+    s.f.forEach(([hz, at], i) => {
+      if (i === 0 || !s.ramp) osc.frequency.setValueAtTime(hz, t + at);
+      else osc.frequency.exponentialRampToValueAtTime(hz, t + at);
+    });
+    gain.gain.setValueAtTime(s.vol, t);
+    gain.gain.linearRampToValueAtTime(0.01, t + s.dur);
+    osc.start(t); osc.stop(t + s.dur);
+  } catch (e) { console.warn('Audio unavailable:', e); }
+}
+
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  const btn = $('btn-sound');
+  btn.innerHTML = `Sound<span class="snd"> ${soundEnabled ? 'on' : 'off'}</span>`;
+  btn.setAttribute('aria-pressed', String(soundEnabled));
+}
+
+/* ==========================================================
+   4. Estado do jogo
+   ========================================================== */
+const G = {
+  board: [], turn: 'white', flipped: false,
+  selected: null, legal: [],
+  history: [], captured: { white: [], black: [] },
+  last: null, fx: null,
+  over: false, result: null, promo: null,
+  ai: null,            // { white: nível|null, black: nível|null } ou null (duas pessoas). nível: 'easy'|'medium'|'hard'
+  aiPaused: false,     // pausa manual do modo IA vs IA
+  thinking: false,
+  mode: 'balanced',    // modo de regras da partida em andamento
+  rules: allRules(true),
+  gameMode: 'fusion',  // 'fusion' = os dois lados fundem | 'versus' = um lado joga Clássico e o outro Fusion
+  classicSide: null,   // no modo 'versus': cor que joga xadrez clássico (não pode fundir)
+  frames: [], viewIndex: 0, autoplay: false, autoplayTimer: null   // revisão da partida (voltar/avançar/play)
+};
+let snapshots = [];
+let aiToken = 0;       // invalida buscas antigas (desfazer, nova partida)
+let setup = { gameMode: 'fusion', fusionSide: 'white', opponent: 'medium', side: 'white', mode: 'balanced', custom: allRules(true), customEdited: false, aiWhite: 'easy', aiBlack: 'medium', aiSpeed: 'normal' };
+let pending = { ...setup, custom: { ...setup.custom } };
+
+const isAiTurn = () => !!G.ai && !!G.ai[G.turn] && !G.over;
+const bothAiControlled = () => !!G.ai && !!G.ai.white && !!G.ai.black;
+function aiLabelFor(color) { return G.ai && G.ai[color] ? AI_LEVELS[G.ai[color]].label : null; }
+function sideDisplayName(color) {
+  const lbl = aiLabelFor(color);
+  return lbl ? `${SIDE_NAME[color]} (${lbl})` : `${SIDE_NAME[color]} (you)`;
+}
+
+function snapshot() {
+  return {
+    board: cloneBoard(G.board), turn: G.turn,
+    captured: { white: G.captured.white.map((p) => ({ ...p })), black: G.captured.black.map((p) => ({ ...p })) },
+    history: G.history.map((h) => ({ ...h })), last: G.last ? { ...G.last } : null
+  };
+}
+
+/* ---------- Match review (back / forward / play-pause) ---------- */
+const isReviewing = () => G.viewIndex < G.frames.length - 1;
+function makeFrame(turnToMove) {
+  return {
+    board: cloneBoard(G.board),
+    captured: { white: G.captured.white.map((p) => ({ ...p })), black: G.captured.black.map((p) => ({ ...p })) },
+    last: G.last ? { ...G.last } : null,
+    turnToMove: turnToMove !== undefined ? turnToMove : G.turn
+  };
+}
+function initFrames() {
+  stopAutoplay();
+  G.frames = [makeFrame()];   // posição inicial: G.turn ainda é 'white', ninguém jogou
+  G.viewIndex = 0;
+}
+/* Chamado em completeTurn() antes do turno virar: other(G.turn) é quem joga a seguir nesse quadro */
+function pushFrame() { G.frames.push(makeFrame(other(G.turn))); }
+function stopAutoplay() {
+  G.autoplay = false;
+  if (G.autoplayTimer) { clearInterval(G.autoplayTimer); G.autoplayTimer = null; }
+}
+function goToFrame(i) {
+  G.viewIndex = Math.max(0, Math.min(G.frames.length - 1, i));
+  render();
+}
+function reviewBack() { if (G.promo) return; stopAutoplay(); if (G.viewIndex > 0) goToFrame(G.viewIndex - 1); }
+function reviewForward() { if (G.promo) return; stopAutoplay(); if (G.viewIndex < G.frames.length - 1) goToFrame(G.viewIndex + 1); }
+function reviewJumpLive() { if (G.promo) return; stopAutoplay(); goToFrame(G.frames.length - 1); }
+function autoplayStep() {
+  if (G.viewIndex >= G.frames.length - 1) { stopAutoplay(); render(); return; }
+  G.viewIndex++;
+  render();
+  if (G.viewIndex >= G.frames.length - 1) stopAutoplay();
+}
+function toggleReviewPlay() {
+  if (G.promo) return;
+  if (G.autoplay) { stopAutoplay(); render(); return; }
+  if (G.frames.length < 2) return;
+  if (G.viewIndex >= G.frames.length - 1) G.viewIndex = 0;   // recomeça do início se já estiver no fim
+  G.autoplay = true;
+  render();
+  G.autoplayTimer = setInterval(autoplayStep, 800);
+}
+
+function initGame() {
+  const back = ['rook', 'knight', 'bishop', 'queen', 'king', 'bishop', 'knight', 'rook'];
+  G.board = Array.from({ length: 8 }, () => Array.from({ length: 8 }, () => []));
+  for (let c = 0; c < 8; c++) {
+    G.board[0][c] = [{ type: back[c], color: 'black' }];
+    G.board[1][c] = [{ type: 'pawn', color: 'black' }];
+    G.board[6][c] = [{ type: 'pawn', color: 'white' }];
+    G.board[7][c] = [{ type: back[c], color: 'white' }];
+  }
+  Object.assign(G, {
+    turn: 'white', selected: null, legal: [], history: [],
+    captured: { white: [], black: [] }, last: null, fx: null,
+    over: false, result: null, promo: null, thinking: false
+  });
+  snapshots = [];
+  initFrames();
+  render();
+  maybeAiMove();
+}
+
+function startGame() {
+  aiToken++;
+  if (setup.opponent === 'human') {
+    G.ai = null;
+    G.flipped = false;
+  } else if (setup.opponent === 'ai_vs_ai') {
+    G.ai = { white: setup.aiWhite, black: setup.aiBlack };
+    G.flipped = false;
+  } else {
+    G.ai = { [setup.side]: null, [other(setup.side)]: setup.opponent };
+    G.flipped = setup.side === 'black';
+  }
+  G.aiPaused = false;
+  if (setup.gameMode === 'versus') {
+    // Clássico vs Fusion: um lado joga xadrez normal (sem fusões), o outro joga Fusion no modo Balanceado
+    G.gameMode = 'versus';
+    G.classicSide = other(setup.fusionSide);
+    G.mode = 'balanced';
+    G.rules = allRules(true);
+  } else {
+    G.gameMode = 'fusion';
+    G.classicSide = null;
+    G.mode = setup.mode;
+    G.rules = rulesFor(setup);          // regras ativas valem até a próxima "Nova partida"
+  }
+  closeModal('modal-promotion');
+  initGame();
+}
+
+function resetGame() {
+  startGame();
+  playSound('move');
+}
+
+function flipBoard() { G.flipped = !G.flipped; render(); }
+
+function undo() {
+  if (!snapshots.length || G.promo || bothAiControlled()) return;   // IA vs IA: use Pausar/Próxima jogada
+  aiToken++;                       // cancela qualquer busca em andamento
+  // Contra a IA, volta até a vez do jogador (desfaz o lance dele e a resposta da IA)
+  do {
+    const s = snapshots.pop();
+    Object.assign(G, {
+      board: s.board, turn: s.turn, captured: s.captured, history: s.history, last: s.last,
+      selected: null, legal: [], fx: null, over: false, result: null, thinking: false
+    });
+  } while (G.ai && G.ai[G.turn] && snapshots.length);
+  G.frames.length = G.history.length + 1;
+  G.viewIndex = G.frames.length - 1;
+  stopAutoplay();
+  closeModal('modal-gameover');
+  playSound('move');
+  render();
+  maybeAiMove();
+}
+
+/* ==========================================================
+   5. Regras: fusão e movimentos
+   ========================================================== */
+/* Só o lado Fusion funde; no modo Clássico vs Fusion o lado clássico joga o xadrez normal */
+const canFuse = (color) => G.classicSide !== color;
+
+function canMerge(source, target) {
+  if (source.length !== 1 || target.length !== 1) return false;   // híbridos não fundem de novo
+  const a = source[0], b = target[0];
+  if (a.color !== b.color) return false;                          // só peças da mesma cor
+  if (!canFuse(a.color)) return false;                            // lado clássico não funde
+  if (a.type === 'king' || b.type === 'king') return false;       // rei não funde
+  if (pairForbidden(a.type, b.type)) return false;                // duplas proibidas pelas regras ativas
+  return true;
+}
+
+/* Duplas que não podem se fundir (só se a regra estiver ativa) */
+function pairForbidden(t1, t2) {
+  const R = G.rules;
+  const pair = (x, y) => (t1 === x && t2 === y) || (t1 === y && t2 === x);
+  if (R.noKnightQueen && pair('knight', 'queen')) return true;
+  if (R.noRookBishop && pair('rook', 'bishop')) return true;
+  return false;
+}
+
+/* Pausa entre fusões: se a última jogada do jogador foi uma fusão, a próxima não pode ser.
+   Deriva do histórico real, então Desfazer e Nova partida funcionam sem estado extra. */
+function mergeBlocked(color) {
+  if (!G.rules.cooldown) return false;
+  for (let i = G.history.length - 1; i >= 0; i--) {
+    if (G.history[i].color === color) return G.history[i].kind === 'merge';
+  }
+  return false;
+}
+
+/* Promoção: com as regras ativas, o peão não vira a mesma peça com a qual está fundido
+   nem forma uma dupla proibida (Cavalo + Rainha, Torre + Bispo). */
+const PROMO_TYPES = ['queen', 'rook', 'bishop', 'knight'];
+function promoBlock(partnerType, type) {
+  if (!partnerType) return null;
+  if (G.rules.promoDiff && partnerType === type) return 'same';
+  if (pairForbidden(partnerType, type)) return 'ban';
+  return null;
+}
+const promoOptions = (partnerType) => PROMO_TYPES.filter((t) => !promoBlock(partnerType, t));
+
+function getPseudoMoves(b, r, c, noMerge = false) {
+  const cell = b[r][c];
+  if (!cell.length) return [];
+  const color = cell[0].color;
+  const targets = [];
+
+  // A unidade se move com a soma dos movimentos de todas as suas peças
+  cell.forEach(({ type }) => {
+    if (type === 'pawn') {
+      const dir = color === 'white' ? -1 : 1;
+      const startRow = color === 'white' ? 6 : 1;
+      const one = r + dir, two = r + 2 * dir;
+      const free = (rr) => b[rr][c].length === 0 || (b[rr][c][0].color === color && canMerge(cell, b[rr][c]));
+
+      if (inBounds(one, c) && free(one)) targets.push({ r: one, c });
+      if (r === startRow && b[one][c].length === 0 && free(two)) targets.push({ r: two, c });
+      [-1, 1].forEach((dc) => {
+        const cc = c + dc;
+        if (inBounds(one, cc) && b[one][cc].length && b[one][cc][0].color !== color) targets.push({ r: one, c: cc });
+      });
+    } else if (type === 'knight' || type === 'king') {
+      const steps = type === 'knight'
+        ? [[-2, -1], [-2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2], [2, -1], [2, 1]]
+        : [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];
+      steps.forEach(([dr, dc]) => {
+        if (inBounds(r + dr, c + dc)) targets.push({ r: r + dr, c: c + dc });
+      });
+    } else {
+      const dirs = [];
+      if (type === 'rook' || type === 'queen') dirs.push([-1, 0], [1, 0], [0, -1], [0, 1]);
+      if (type === 'bishop' || type === 'queen') dirs.push([-1, -1], [-1, 1], [1, -1], [1, 1]);
+      dirs.forEach(([dr, dc]) => {
+        let nr = r + dr, nc = c + dc;
+        while (inBounds(nr, nc)) {
+          targets.push({ r: nr, c: nc });
+          if (b[nr][nc].length) break;
+          nr += dr; nc += dc;
+        }
+      });
+    }
+  });
+
+  const unique = new Map();
+  targets.forEach(({ r: tr, c: tc }) => {
+    const dest = b[tr][tc];
+    let moveType = null;
+    if (!dest.length) moveType = 'normal';
+    else if (dest[0].color !== color) moveType = 'capture';
+    else if (!noMerge && canMerge(cell, dest)) moveType = 'merge';
+    if (moveType) unique.set(`${tr},${tc}`, { r: tr, c: tc, moveType });
+  });
+  return [...unique.values()];
+}
+
+function findKing(b, color) {
+  for (let r = 0; r < 8; r++)
+    for (let c = 0; c < 8; c++)
+      if (b[r][c].some((p) => p.type === 'king' && p.color === color)) return { r, c };
+  return null;
+}
+
+/* Detecta ataque a partir da casa alvo, sem gerar todos os lances inimigos.
+   Uma unidade ataca com a soma dos movimentos das suas peças. */
+const KNIGHT_JUMPS = [[-2, -1], [-2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2], [2, -1], [2, 1]];
+const KING_STEPS = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];
+const ORTHO = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+const DIAG = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+
+function hasType(cell, by, t1, t2) {
+  if (!cell.length || cell[0].color !== by) return false;
+  for (let i = 0; i < cell.length; i++) {
+    const t = cell[i].type;
+    if (t === t1 || t === t2) return true;
+  }
+  return false;
+}
+
+function attacksSquare(b, r, c, by) {
+  const pr = r + (by === 'white' ? 1 : -1);          // linha de onde um peão de `by` ataca (r, c)
+  if (pr >= 0 && pr < 8) {
+    if (c > 0 && hasType(b[pr][c - 1], by, 'pawn')) return true;
+    if (c < 7 && hasType(b[pr][c + 1], by, 'pawn')) return true;
+  }
+  for (const [dr, dc] of KNIGHT_JUMPS) {
+    const nr = r + dr, nc = c + dc;
+    if (inBounds(nr, nc) && hasType(b[nr][nc], by, 'knight')) return true;
+  }
+  for (const [dr, dc] of KING_STEPS) {
+    const nr = r + dr, nc = c + dc;
+    if (inBounds(nr, nc) && hasType(b[nr][nc], by, 'king')) return true;
+  }
+  for (const [dr, dc] of ORTHO) {
+    let nr = r + dr, nc = c + dc;
+    while (inBounds(nr, nc)) {
+      const cell = b[nr][nc];
+      if (cell.length) { if (hasType(cell, by, 'rook', 'queen')) return true; break; }
+      nr += dr; nc += dc;
+    }
+  }
+  for (const [dr, dc] of DIAG) {
+    let nr = r + dr, nc = c + dc;
+    while (inBounds(nr, nc)) {
+      const cell = b[nr][nc];
+      if (cell.length) { if (hasType(cell, by, 'bishop', 'queen')) return true; break; }
+      nr += dr; nc += dc;
+    }
+  }
+  return false;
+}
+
+function isKingInCheck(b, color) {
+  const king = findKing(b, color);
+  return !!king && attacksSquare(b, king.r, king.c, other(color));
+}
+
+/* Lances legais de uma unidade. Testa cada lance no próprio tabuleiro e desfaz (sem clonar). */
+function legalMovesFrom(b, r, c, kingPos, capturesOnly = false, noMerge = false) {
+  const unit = b[r][c];
+  const color = unit[0].color, enemy = other(color);
+  const king = kingPos || findKing(b, color);
+  const carriesKing = unit.some((p) => p.type === 'king');
+  const out = [];
+
+  for (const m of getPseudoMoves(b, r, c, noMerge)) {
+    if (capturesOnly && m.moveType !== 'capture') continue;
+    const prev = b[m.r][m.c];
+    b[r][c] = [];
+    b[m.r][m.c] = m.moveType === 'capture' ? unit : prev.concat(unit);
+    const at = carriesKing ? m : king;
+    const safe = !at || !attacksSquare(b, at.r, at.c, enemy);
+    b[r][c] = unit;
+    b[m.r][m.c] = prev;
+    if (safe) out.push(m);
+  }
+  return out;
+}
+
+function getLegalMoves(r, c) {
+  const unit = G.board[r][c];
+  return legalMovesFrom(G.board, r, c, null, false, mergeBlocked(unit[0].color));
+}
+
+function hasAnyLegalMove(color) {
+  for (let r = 0; r < 8; r++)
+    for (let c = 0; c < 8; c++)
+      if (G.board[r][c].length && G.board[r][c][0].color === color && getLegalMoves(r, c).length) return true;
+  return false;
+}
+
+/* ==========================================================
+   6. Jogada
+   ========================================================== */
+function executeMove(from, to) {
+  snapshots.push(snapshot());
+
+  const unit = [...G.board[from.r][from.c]];
+  G.board[from.r][from.c] = [];
+
+  const dest = G.board[to.r][to.c];
+  let kind = 'move', into = null, taken = null;
+
+  if (dest.length && dest[0].color !== G.turn) {
+    kind = 'capture';
+    taken = dest.map((p) => p.type);
+    G.captured[G.turn].push(...dest);
+    G.board[to.r][to.c] = [];
+  } else if (dest.length) {
+    kind = 'merge';
+    into = dest[0].type;
+  }
+  G.board[to.r][to.c].push(...unit);
+
+  G.history.push({ color: G.turn, pieces: unit.map((p) => p.type), from: sqName(from.r, from.c), to: sqName(to.r, to.c), kind, into, taken });
+  G.last = { from, to };
+  G.fx = { from, to, kind };
+  G.selected = null; G.legal = [];
+
+  playSound(kind === 'merge' ? 'merge' : kind === 'capture' ? 'capture' : 'move');
+
+  // Promoção: só a metade "peão" da unidade é promovida
+  const promoRank = G.turn === 'white' ? 0 : 7;
+  const idx = G.board[to.r][to.c].findIndex((p) => p.type === 'pawn');
+  if (idx !== -1 && to.r === promoRank) {
+    G.promo = { r: to.r, c: to.c, idx };
+    if (G.ai && G.ai[G.turn]) {                   // a IA promove sozinha
+      const partner = G.board[to.r][to.c].find((_, i) => i !== idx);
+      finishPromotion(promoOptions(partner && partner.type)[0]);   // melhor opção permitida (Rainha > Torre > Bispo > Cavalo)
+      return;
+    }
+    render();
+    openPromotion();
+    return;
+  }
+  completeTurn();
+}
+
+function completeTurn() {
+  pushFrame();
+  G.viewIndex = G.frames.length - 1;
+  G.turn = other(G.turn);
+  const inCheck = isKingInCheck(G.board, G.turn);
+  const canMove = hasAnyLegalMove(G.turn);
+  const lastEntry = G.history[G.history.length - 1];
+
+  if (inCheck && !canMove) {
+    const winner = other(G.turn);
+    G.over = true; G.result = { winner };
+    lastEntry.check = '#';
+    playSound('win');
+    const desc = !G.ai ? `${SIDE_NAME[winner]} won the game.`
+      : !G.ai[winner] ? 'You won the game.'
+      : bothAiControlled() ? `${sideDisplayName(winner)} won the game.`
+      : `The ${AI_LEVELS[G.ai[winner]].label} won the game.`;
+    showGameOver(winner, 'Checkmate', desc);
+  } else if (!inCheck && !canMove) {
+    G.over = true; G.result = { winner: null, reason: 'stalemate' };
+    showGameOver(null, 'Draw by stalemate', 'The player to move has no legal moves.');
+  } else if (countRepetitions() >= 3) {
+    // Corta loops infinitos de xeque/perseguição: mesma posição pela 3ª vez encerra a partida
+    G.over = true; G.result = { winner: null, reason: 'repetition' };
+    if (inCheck) lastEntry.check = '+';
+    playSound('win');
+    showGameOver(null, 'Draw by repetition', 'The same position has occurred three times.');
+  } else if (halfmoveClock() >= 100) {
+    G.over = true; G.result = { winner: null, reason: 'fifty-move' };
+    if (inCheck) lastEntry.check = '+';
+    playSound('win');
+    showGameOver(null, 'Draw by the 50-move rule', '50 moves have passed for each side with no capture, fusion, or pawn move.');
+  } else if (inCheck) {
+    lastEntry.check = '+';
+    playSound('check');
+  }
+  render();
+  maybeAiMove();
+}
+
+/* ==========================================================
+   7. Renderização
+   ========================================================== */
+function render() {
+  const focused = document.activeElement && document.activeElement.dataset && document.activeElement.dataset.r;
+  const focusKey = focused ? `${document.activeElement.dataset.r},${document.activeElement.dataset.c}` : null;
+
+  renderBoard(focusKey);
+  renderTags();
+  renderStatus();
+  renderHistory();
+  renderMode();
+  const bothAi = bothAiControlled();
+  const reviewing = isReviewing();
+  $('btn-undo').disabled = !snapshots.length || !!G.promo || bothAi || reviewing;
+  $('btn-back').disabled = G.viewIndex <= 0 || !!G.promo;
+  $('btn-resume').hidden = !reviewing || G.over;
+  $('btn-ai-pause').hidden = !bothAi;
+  $('btn-ai-step').hidden = !bothAi;
+  if (bothAi) {
+    $('btn-ai-pause').textContent = G.aiPaused ? 'Resume' : 'Pause';
+    $('btn-ai-pause').disabled = G.over;
+    $('btn-ai-step').disabled = G.over || !!G.promo || !G.aiPaused;
+  }
+
+  const showReviewBar = G.over && G.frames.length > 1;
+  $('review-bar').hidden = !showReviewBar;
+  if (showReviewBar) {
+    $('btn-review-back').disabled = G.viewIndex <= 0;
+    $('btn-review-forward').disabled = G.viewIndex >= G.frames.length - 1;
+    $('btn-review-play').disabled = false;
+    $('review-play-icon').innerHTML = G.autoplay
+      ? '<rect x="4" y="3" width="3" height="10"/><rect x="9" y="3" width="3" height="10"/>'
+      : '<path d="M5 3 L13 8 L5 13 Z"/>';
+    $('btn-review-play').title = G.autoplay ? 'Pause' : 'Play';
+    $('review-pos').textContent = `Move ${G.viewIndex} / ${G.frames.length - 1}`;
+  }
+}
+
+function toggleAiPause() {
+  if (!bothAiControlled() || G.over) return;
+  G.aiPaused = !G.aiPaused;
+  render();
+  if (!G.aiPaused) maybeAiMove();
+}
+function aiStep() {
+  if (!bothAiControlled() || G.over || G.promo || !G.aiPaused) return;
+  maybeAiMove(true);
+}
+
+/* Etiqueta do modo de regras e nota do painel lateral */
+const activeRuleCount = () => RULE_DEFS.filter((d) => G.rules[d.key]).length;
+function renderMode() {
+  const chip = $('mode-chip');
+  const versus = G.gameMode === 'versus';
+  chip.dataset.mode = versus ? 'versus' : G.mode;
+  chip.innerHTML = versus
+    ? `Classic vs Fusion<small>Fusion: ${SIDE_NAME[other(G.classicSide)]}</small>`
+    : `${MODE_LABEL[G.mode]}<small>${activeRuleCount()} of ${RULE_DEFS.length} rules</small>`;
+  $('fusion-note-text').innerHTML = (versus
+    ? `<strong>Classic vs Fusion</strong>: ${SIDE_NAME[G.classicSide]} plays regular chess, with no fusions. ${SIDE_NAME[other(G.classicSide)]} can move a piece onto another of their own to fuse them.`
+    : '<strong>Rook + Knight</strong> move as a single unit: in straight lines and in an L. Move a piece onto another of yours to fuse them.')
+    + (G.rules.cooldown ? ' After a fusion, the next move cannot be a fusion.' : '');
+}
+
+function renderBoard(focusKey) {
+  const el = $('board');
+  const reviewing = isReviewing();
+  const frame = reviewing ? G.frames[G.viewIndex] : null;
+  const board = reviewing ? frame.board : G.board;
+  const lastMove = reviewing ? frame.last : G.last;
+  const checkColor = reviewing ? frame.turnToMove : G.turn;
+  const inCheck = isKingInCheck(board, checkColor);
+  const legal = reviewing ? new Map() : new Map(G.legal.map((m) => [`${m.r},${m.c}`, m]));
+  const selected = reviewing ? null : G.selected;
+  const vr = (r) => (G.flipped ? 7 - r : r);
+  const vc = (c) => (G.flipped ? 7 - c : c);
+  const frag = document.createDocumentFragment();
+  let toFocus = null;
+
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      const r = G.flipped ? 7 - row : row;
+      const c = G.flipped ? 7 - col : col;
+      const cell = board[r][c];
+      const dark = (r + c) % 2 === 1;
+
+      const sq = document.createElement('button');
+      sq.type = 'button';
+      sq.className = `sq ${dark ? 'd' : 'l'}`;
+      sq.dataset.r = r; sq.dataset.c = c;
+      sq.setAttribute('aria-label', `${sqName(r, c)}${cell.length ? ', ' + cell.map(pieceLabel).join(' fused with ') : ', empty'}`);
+
+      if (lastMove && ((lastMove.from.r === r && lastMove.from.c === c) || (lastMove.to.r === r && lastMove.to.c === c))) sq.classList.add('last');
+      if (selected && selected.r === r && selected.c === c) sq.classList.add('sel');
+      if (inCheck && cell.some((p) => p.type === 'king' && p.color === checkColor)) sq.classList.add('check');
+      if (!reviewing && G.fx && G.fx.to.r === r && G.fx.to.c === c && G.fx.kind !== 'move') sq.classList.add(`fx-${G.fx.kind}`);
+
+      if (col === 0) sq.insertAdjacentHTML('beforeend', `<span class="co rank">${8 - r}</span>`);
+      if (row === 7) sq.insertAdjacentHTML('beforeend', `<span class="co file">${FILES[c]}</span>`);
+
+      const mv = legal.get(`${r},${c}`);
+      if (mv) sq.insertAdjacentHTML('beforeend', `<i class="mk ${mv.moveType === 'normal' ? 'move' : mv.moveType}"></i>`);
+
+      if (cell.length) {
+        const piece = document.createElement('div');
+        piece.className = 'piece';
+        piece.innerHTML = unitHTML(cell.map((p) => p.type), cell[0].color);
+        if (!reviewing && G.fx && G.fx.to.r === r && G.fx.to.c === c) {
+          piece.classList.add('slide');
+          piece.style.setProperty('--dx', `${(vc(G.fx.from.c) - vc(c)) * 100}%`);
+          piece.style.setProperty('--dy', `${(vr(G.fx.from.r) - vr(r)) * 100}%`);
+        }
+        sq.appendChild(piece);
+      }
+
+      sq.addEventListener('click', () => onSquare(r, c));
+      if (focusKey === `${r},${c}`) toFocus = sq;
+      frag.appendChild(sq);
+    }
+  }
+  el.replaceChildren(frag);
+  G.fx = null;
+  if (toFocus) toFocus.focus({ preventScroll: true });
+}
+
+function renderTags() {
+  const topColor = G.flipped ? 'white' : 'black';
+  fillTag($('tag-top'), topColor);
+  fillTag($('tag-bottom'), other(topColor));
+}
+
+function fillTag(el, color) {
+  const reviewing = isReviewing();
+  const frame = reviewing ? G.frames[G.viewIndex] : null;
+  const active = !reviewing && !G.over && G.turn === color;
+  el.className = `tag${active ? ' active' : ''}`;
+  const board = reviewing ? frame.board : G.board;
+  const checked = reviewing
+    ? frame.turnToMove === color && isKingInCheck(board, color)
+    : active && isKingInCheck(board, color);
+  const captured = reviewing ? frame.captured : G.captured;
+  const caps = [...captured[color]].sort((a, b) => VALUE[b.type] - VALUE[a.type]);
+  const isAi = !!G.ai && !!G.ai[color];
+  const role = !G.ai ? '' : (isAi ? AI_LEVELS[G.ai[color]].label : 'You');
+  const noFusion = active && !G.promo && mergeBlocked(color);
+  const kind = G.classicSide ? (color === G.classicSide ? 'classic' : 'fusion') : '';
+  const state = reviewing ? '' : (checked ? 'in check' : (active ? (isAi && G.thinking ? 'thinking…' : (noFusion ? 'playing · no fusion' : 'playing')) : ''));
+  el.innerHTML = `
+    <span class="dot ${color === 'white' ? 'w' : 'b'}"></span>
+    <span class="name">${SIDE_NAME[color]}</span>
+    ${role ? `<span class="role">${role}</span>` : ''}
+    ${kind ? `<span class="role ${kind}">${kind === 'classic' ? 'Classic' : 'Fusion'}</span>` : ''}
+    <span class="state${checked ? ' alert' : ''}">${state}</span>
+    <span class="tray${caps.length ? ' has' : ''}" title="Captured pieces">${caps.map((p) => pieceSVG(p.type, p.color)).join('')}</span>`;
+}
+
+function renderStatus() {
+  const title = $('status-title'), sub = $('status-sub');
+  sub.classList.remove('alert');
+
+  if (isReviewing()) {
+    title.textContent = 'Match review';
+    sub.innerHTML = `Move ${G.viewIndex} of ${G.frames.length - 1} <button type="button" class="btn mini" onclick="reviewJumpLive()">${G.over ? 'Go to result' : 'Back to current'}</button>`;
+    return;
+  }
+
+  if (G.over) {
+    if (G.result.winner) {
+      title.textContent = `${SIDE_NAME[G.result.winner]} wins`;
+      sub.textContent = bothAiControlled() ? 'Checkmate. Start a new game.' : 'Checkmate. Use Undo or start a new game.';
+    } else {
+      title.textContent = 'Draw';
+      sub.textContent = 'Stalemate: no legal moves.';
+    }
+    return;
+  }
+  title.textContent = `${SIDE_NAME[G.turn]}'s turn`;
+  if (isKingInCheck(G.board, G.turn)) {
+    sub.textContent = isAiTurn() ? "The AI's king is in check." : 'Your king is in check.';
+    sub.classList.add('alert');
+  } else if (G.thinking) {
+    sub.textContent = 'The AI is thinking…';
+  } else if (G.promo) {
+    sub.textContent = 'Choose the promotion piece.';
+  } else if (G.selected) {
+    sub.textContent = G.legal.length
+      ? (!canFuse(G.turn)
+        ? 'Dot: move. Red ring: capture. Classic chess: no fusion.'
+        : mergeBlocked(G.turn)
+        ? 'Dot: move. Red ring: capture. Fusion blocked this turn.'
+        : 'Dot: move. Red ring: capture. Violet ring: fuse.')
+      : 'This piece has no legal moves right now.';
+  } else if (mergeBlocked(G.turn)) {
+    sub.textContent = `${SIDE_NAME[G.turn]} fused on the previous move: now they can only move or capture.`;
+  } else {
+    sub.textContent = 'Tap a piece to see its moves.';
+  }
+}
+
+function renderHistory() {
+  const list = $('history');
+  $('move-count').textContent = G.history.length;
+  $('btn-copy').disabled = !G.history.length;
+  if (!G.history.length) {
+    list.innerHTML = `<li class="empty">Moves will appear here.</li>`;
+    return;
+  }
+  const cell = (h, isNew) => {
+    if (!h) return '<span class="mv"></span>';
+    const sym = h.kind === 'merge' ? '<svg class="link" viewBox="0 0 16 10" aria-label="fused with"><circle cx="5.5" cy="5" r="3.6"/><circle cx="10.5" cy="5" r="3.6"/></svg>' : h.kind === 'capture' ? '<span class="sym cap">×</span>' : '<span class="sym">→</span>';
+    const extra = h.kind === 'merge' ? chipHTML([h.into], h.color) : h.kind === 'capture' ? chipHTML(h.taken, other(h.color)) : '';
+    const promo = h.promo ? `<span class="sym fuse">=</span>${chipHTML([h.promo], h.color)}` : '';
+    return `<span class="mv${isNew ? ' new' : ''}">${chipHTML(h.pieces, h.color)}<span>${h.from}</span>${sym}<span>${h.to}</span>${extra}${promo}${h.check ? `<span class="sym cap">${h.check}</span>` : ''}</span>`;
+  };
+  let html = '';
+  const lastIdx = G.history.length - 1;
+  for (let i = 0; i < G.history.length; i += 2) {
+    html += `<li><span class="n">${i / 2 + 1}</span>${cell(G.history[i], i === lastIdx)}${cell(G.history[i + 1], i + 1 === lastIdx)}</li>`;
+  }
+  list.innerHTML = html;
+  list.scrollTop = list.scrollHeight;
+}
+
+/* ==========================================================
+   7b. Copiar histórico (texto)
+   ========================================================== */
+const unitName = (types) => types.map((t) => NAMES[t]).join(' + ');
+
+/* Descreve uma jogada em texto: qual peça (ou unidade fundida) andou, o que foi fundido ou capturado */
+function describeMove(h) {
+  const isUnit = h.pieces.length > 1;
+  const who = isUnit ? `${unitName(h.pieces)} (fused unit)` : NAMES[h.pieces[0]];
+  let s;
+
+  if (h.kind === 'merge') {
+    s = `FUSION: ${NAMES[h.pieces[0]]} ${h.from} fused with ${NAMES[h.into]} ${h.to} → unit ${NAMES[h.into]} + ${NAMES[h.pieces[0]]} at ${h.to}`;
+  } else if (h.kind === 'capture') {
+    s = `${who} ${h.from} × ${h.to} (captured ${h.taken.length > 1 ? `unit ${unitName(h.taken)}` : NAMES[h.taken[0]]})`;
+  } else {
+    s = `${who} ${h.from} → ${h.to}`;
+  }
+
+  if (h.promo) {
+    let done = false;
+    const after = h.pieces.map((t) => (!done && t === 'pawn' ? (done = true, h.promo) : t));
+    s += ` | Promotion: Pawn → ${NAMES[h.promo]}${after.length > 1 ? ` (unit now: ${unitName(after)})` : ''}`;
+  }
+  if (h.check === '#') s += ' | checkmate';
+  else if (h.check === '+') s += ' | check';
+  return s;
+}
+
+function historyText() {
+  const lines = [];
+  const you = G.ai ? `${sideDisplayName('white')} vs ${sideDisplayName('black')}` : 'White vs Black (two players)';
+  const drawLabel = { stalemate: 'draw by stalemate', repetition: 'draw by repetition', 'fifty-move': 'draw by the 50-move rule' };
+  const status = !G.over ? 'in progress'
+    : G.result.winner ? `checkmate, ${SIDE_NAME[G.result.winner]} won` : (drawLabel[G.result.reason] || 'draw');
+
+  lines.push('FUSION CHESS: game history');
+  lines.push(`Game: ${you}`);
+  if (G.gameMode === 'versus') lines.push(`Mode: Classic vs Fusion (${SIDE_NAME[G.classicSide]} plays classic, ${SIDE_NAME[other(G.classicSide)]} plays Fusion)`);
+  const active = RULE_DEFS.filter((d) => G.rules[d.key]).map((d) => d.title);
+  lines.push(`Rules: ${MODE_LABEL[G.mode]} (${active.length ? `active: ${active.join(', ')}` : 'no optional rules active'})`);
+  lines.push(`Status: ${status}`);
+  lines.push('');
+  lines.push('MOVES');
+
+  for (let i = 0; i < G.history.length; i += 2) {
+    const n = i / 2 + 1;
+    const a = G.history[i], b = G.history[i + 1];
+    lines.push(`${n}. ${SIDE_NAME[a.color]}: ${describeMove(a)}`);
+    if (b) lines.push(`${' '.repeat(String(n).length + 2)}${SIDE_NAME[b.color]}: ${describeMove(b)}`);
+  }
+
+  // Resumo das fusões de cada lado
+  const merges = G.history
+    .map((h, i) => ({ h, n: Math.floor(i / 2) + 1 }))
+    .filter(({ h }) => h.kind === 'merge');
+  lines.push('');
+  lines.push('FUSIONS');
+  if (!merges.length) {
+    lines.push('No fusions so far.');
+  } else {
+    ['white', 'black'].forEach((color) => {
+      const mine = merges.filter(({ h }) => h.color === color);
+      lines.push(`${SIDE_NAME[color]}: ${mine.length
+        ? mine.map(({ h, n }) => `${NAMES[h.into]} + ${NAMES[h.pieces[0]]} at ${h.to} (move ${n})`).join('; ')
+        : 'none'}`);
+    });
+  }
+  return lines.join('\n');
+}
+
+async function writeClipboard(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* tenta o método antigo */ }
+  }
+  // Alternativa para arquivos abertos localmente ou navegadores sem a API de área de transferência
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('readonly', '');
+  ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;user-select:text;-webkit-user-select:text;';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select(); ta.setSelectionRange(0, text.length);
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+  ta.remove();
+  return ok;
+}
+
+let copyTimer = null;
+async function copyHistory() {
+  if (!G.history.length) return;
+  const ok = await writeClipboard(historyText());
+  const btn = $('btn-copy'), label = $('copy-label');
+  const msg = ok ? 'Copied!' : 'Could not copy';
+  label.textContent = msg;
+  $('copy-status').textContent = ok ? 'History copied to the clipboard.' : msg;
+  btn.classList.toggle('done', ok);
+  btn.classList.toggle('fail', !ok);
+  clearTimeout(copyTimer);
+  copyTimer = setTimeout(() => {
+    label.textContent = 'Copy';
+    $('copy-status').textContent = '';
+    btn.classList.remove('done', 'fail');
+  }, 1800);
+}
+
+/* ==========================================================
+   8. Interação
+   ========================================================== */
+function onSquare(r, c) {
+  if (G.over || G.promo || isAiTurn() || isReviewing()) return;
+
+  const move = G.legal.find((m) => m.r === r && m.c === c);
+  if (move) { executeMove(G.selected, { r, c }); return; }
+
+  const cell = G.board[r][c];
+  const same = G.selected && G.selected.r === r && G.selected.c === c;
+  if (cell.length && cell[0].color === G.turn && !same) {
+    G.selected = { r, c };
+    G.legal = getLegalMoves(r, c);
+  } else {
+    G.selected = null; G.legal = [];
+  }
+  render();
+}
+
+/* Promoção: impede criar uma unidade com Cavalo + Rainha */
+function openPromotion() {
+  const { r, c, idx } = G.promo;
+  const unit = G.board[r][c];
+  const partner = unit.find((_, i) => i !== idx);
+  const grid = $('promo-grid');
+  grid.innerHTML = '';
+
+  $('promo-lead').textContent = partner && G.rules.promoDiff
+    ? `The pawn is fused with ${NAMES[partner.type]}: it must become a different piece.`
+    : 'Choose the new piece. The other half of the unit stays the same.';
+
+  PROMO_TYPES.forEach((type) => {
+    const block = promoBlock(partner && partner.type, type);
+    const note = block === 'same' ? `Already the fused piece`
+      : block === 'ban' ? `Can't fuse with ${NAMES[partner.type]}` : '';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'promo-btn';
+    btn.disabled = !!block;
+    btn.innerHTML = `<span class="box">${pieceSVG(type, G.turn)}</span><span>${NAMES[type]}</span>${note ? `<small>${note}</small>` : ''}`;
+    btn.onclick = () => finishPromotion(type);
+    grid.appendChild(btn);
+  });
+  openModal('modal-promotion');
+}
+
+function finishPromotion(type) {
+  const { r, c, idx } = G.promo;
+  const partner = G.board[r][c].find((_, i) => i !== idx);
+  if (promoBlock(partner && partner.type, type)) return;   // defesa: opção proibida pela regra
+  G.board[r][c][idx].type = type;
+  G.history[G.history.length - 1].promo = type;
+  G.promo = null;
+  closeModal('modal-promotion');
+  completeTurn();
+}
+
+function showGameOver(winner, title, desc) {
+  $('over-title').textContent = title;
+  $('over-desc').textContent = desc;
+  $('over-medals').innerHTML = winner
+    ? `<div class="medal">${pieceSVG('king', winner)}</div>`
+    : `<div class="medal">${pieceSVG('king', 'white')}</div><div class="medal">${pieceSVG('king', 'black')}</div>`;
+  openModal('modal-gameover');
+}
+
+function openModal(id) { $(id).classList.add('open'); }
+function closeModal(id) { $(id).classList.remove('open'); }
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') { closeModal('modal-rules'); closeModal('modal-gameover'); closeModal('modal-setup'); }
+});
+document.querySelectorAll('.overlay').forEach((o) => o.addEventListener('mousedown', (e) => {
+  if (e.target === o && ['modal-rules', 'modal-gameover', 'modal-setup'].includes(o.id)) closeModal(o.id);
+}));
+
+/* ==========================================================
+   9. Inteligência artificial
+   Busca negamax com poda alfa-beta, aprofundamento iterativo e
+   quiescência (só capturas). A fusão entra na avaliação como um
+   bônus por peças com movimentos complementares.
+   ========================================================== */
+const AI_LEVELS = {
+  // depth: lances à frente | quiesce: termina trocas de captura | noise: erro na nota (centipeões)
+  // blunder: chance de jogar um lance qualquer | timeMs: tempo máximo de busca
+  easy:   { label: 'Easy AI', depth: 2, quiesce: false, noise: 70, blunder: 0.08, timeMs: 1500 },
+  medium: { label: 'Medium AI', depth: 3, quiesce: true,  noise: 0,  blunder: 0,    timeMs: 2500 },
+  hard:   { label: 'Strong AI', depth: 4, quiesce: true,  noise: 0,  blunder: 0,    timeMs: 3500 }
+};
+const SPEED_DELAY = { slow: 1400, normal: 450, fast: 120 };
+const MATE = 100000;
+const AI_VALUE = { pawn: 100, knight: 320, bishop: 330, rook: 500, queen: 900, king: 0 };
+
+/* Padrões de movimento: o = reto, d = diagonal, n = cavalo, p = peão */
+const PATTERN = { rook: ['o'], bishop: ['d'], queen: ['o', 'd'], knight: ['n'], pawn: ['p'], king: [] };
+const PATTERN_VALUE = { o: 480, d: 330, n: 320, p: 100 };
+
+/* Bônus de fusão: só vale quando as duas peças cobrem movimentos diferentes.
+   Torre + Cavalo (o hibrido da logo) mistura reta e salto: é o par mais difícil de
+   uma busca rasa enxergar chegando (o cavalo cobre a diagonal que a torre não vê),
+   então recebe um extra: vale mais criar e vale mais respeitar quando é do adversário. */
+function synergy(t1, t2) {
+  const a = PATTERN[t1], b = PATTERN[t2];
+  if (a.some((x) => b.includes(x))) return 0;
+  const sum = (list) => list.reduce((acc, k) => acc + PATTERN_VALUE[k], 0);
+  let bonus = Math.round(0.2 * Math.min(sum(a), sum(b)));
+  const isRookKnight = (t1 === 'rook' && t2 === 'knight') || (t1 === 'knight' && t2 === 'rook');
+  if (isRookKnight) bonus += 35;
+  return bonus;
+}
+
+const unitValue = (cell) => cell.reduce((acc, p) => acc + AI_VALUE[p.type], 0);
+const centerScore = (r, c) => 3.5 - Math.max(Math.abs(r - 3.5), Math.abs(c - 3.5));   // 0 (borda) a 3 (centro)
+
+function pieceBonus(p, r, c) {
+  switch (p.type) {
+    case 'pawn': {
+      const adv = p.color === 'white' ? 6 - r : r - 1;
+      return adv * 6 + (c === 3 || c === 4 ? adv * 3 : 0);
+    }
+    case 'knight': return centerScore(r, c) * 14;
+    case 'bishop': return centerScore(r, c) * 7;
+    case 'queen':  return centerScore(r, c) * 3;
+    case 'rook':   return (p.color === 'white' ? r === 1 : r === 6) ? 20 : 0;
+    default: return 0;
+  }
+}
+
+/* Avaliação estática do ponto de vista das Brancas (em centipeões) */
+function evaluate(b) {
+  let score = 0, nonPawn = 0;
+  const mat = { white: 0, black: 0 };
+  const kings = {};
+  const hybridRK = { white: false, black: false };   // tem Torre+Cavalo fundida em jogo?
+
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const cell = b[r][c];
+      if (!cell.length) continue;
+      const color = cell[0].color;
+      let v = 0;
+      for (const p of cell) {
+        if (p.type === 'king') { kings[color] = { r, c }; continue; }
+        const base = AI_VALUE[p.type];
+        v += base + pieceBonus(p, r, c);
+        mat[color] += base;
+        if (p.type !== 'pawn') nonPawn += base;
+      }
+      // Bônus de fusão só vale fora da fileira de origem; fundir atrás dos peões é só perder tempo
+      if (cell.length === 2) {
+        v += r === (color === 'white' ? 7 : 0) ? -10 : synergy(cell[0].type, cell[1].type);
+        const types = [cell[0].type, cell[1].type];
+        if (types.includes('rook') && types.includes('knight')) hybridRK[color] = true;
+      }
+      score += color === 'white' ? v : -v;
+    }
+  }
+
+  const endgame = nonPawn < 2400;
+  for (const color of ['white', 'black']) {
+    const k = kings[color];
+    if (!k) continue;
+    let kv;
+    if (endgame) kv = centerScore(k.r, k.c) * 12;
+    else {
+      kv = (k.r === (color === 'white' ? 7 : 0) ? 25 : 0) + (k.c <= 2 || k.c >= 6 ? 15 : 0);
+      // Borda e canto escondem o rei de peças comuns, mas é ali que a Torre+Cavalo
+      // inimiga mata melhor (cavalo cobre a fuga que a torre deixa passar): um pouco
+      // menos de crédito por "segurança" de canto quando o adversário tem essa fusão.
+      if (hybridRK[other(color)]) kv -= 12;
+    }
+    score += color === 'white' ? kv : -kv;
+  }
+
+  // Final com vantagem: empurra o rei adversário para a borda e aproxima o próprio rei
+  const diff = mat.white - mat.black;
+  if (endgame && Math.abs(diff) > 250 && kings.white && kings.black) {
+    const strong = diff > 0 ? 'white' : 'black', weak = other(strong);
+    const ks = kings[strong], kw = kings[weak];
+    const edge = (3 - centerScore(kw.r, kw.c)) * 10;
+    const close = (14 - (Math.abs(ks.r - kw.r) + Math.abs(ks.c - kw.c))) * 3;
+    score += (strong === 'white' ? 1 : -1) * (edge + close);
+  }
+  return score;
+}
+const evalFor = (b, color) => (color === 'white' ? evaluate(b) : -evaluate(b));
+
+/* Gera lances legais no formato { fr, fc, r, c, type } */
+function genMoves(b, color, capturesOnly = false, noMerge = false) {
+  const out = [];
+  const king = findKing(b, color);
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const cell = b[r][c];
+      if (!cell.length || cell[0].color !== color) continue;
+      for (const m of legalMovesFrom(b, r, c, king, capturesOnly, noMerge)) out.push({ fr: r, fc: c, r: m.r, c: m.c, type: m.moveType });
+    }
+  }
+  return out;
+}
+
+/* Aplica um lance no tabuleiro de busca. Promoção automática (Rainha; Torre se a parceira for Cavalo). */
+function doMove(b, mv) {
+  const unit = b[mv.fr][mv.fc], prev = b[mv.r][mv.c];
+  let moved = unit;
+  const idx = unit.findIndex((p) => p.type === 'pawn');
+  if (idx !== -1 && mv.r === (unit[0].color === 'white' ? 0 : 7)) {
+    const partner = unit.find((_, i) => i !== idx);
+    const type = promoOptions(partner && partner.type)[0];
+    moved = unit.map((p, i) => (i === idx ? { type, color: p.color } : p));
+  }
+  b[mv.fr][mv.fc] = [];
+  b[mv.r][mv.c] = mv.type === 'capture' ? moved : prev.concat(moved);
+  return { unit, prev };
+}
+function undoMove(b, mv, rec) { b[mv.fr][mv.fc] = rec.unit; b[mv.r][mv.c] = rec.prev; }
+
+/* Ordena para a poda funcionar: capturas boas primeiro, depois promoções e fusões */
+function orderMoves(b, moves) {
+  for (const mv of moves) {
+    const src = b[mv.fr][mv.fc], dst = b[mv.r][mv.c];
+    let s = 0;
+    if (mv.type === 'capture') s = 1000 + 10 * unitValue(dst) - unitValue(src);
+    else if (mv.type === 'merge') s = 30;
+    if (src.some((p) => p.type === 'pawn') && mv.r === (src[0].color === 'white' ? 0 : 7)) s += 8000;
+    mv.o = s;
+  }
+  moves.sort((x, y) => y.o - x.o);
+}
+
+function quiesce(b, color, alpha, beta, ctx, depth) {
+  if ((++ctx.nodes & 255) === 0 && performance.now() > ctx.deadline) ctx.abort = true;
+  if (ctx.abort) return 0;
+  const stand = evalFor(b, color);
+  if (depth >= 4 || stand >= beta) return stand >= beta ? beta : stand;
+  if (stand > alpha) alpha = stand;
+  const caps = genMoves(b, color, true);
+  orderMoves(b, caps);
+  for (const mv of caps) {
+    const rec = doMove(b, mv);
+    const score = -quiesce(b, other(color), -beta, -alpha, ctx, depth + 1);
+    undoMove(b, mv, rec);
+    if (ctx.abort) return 0;
+    if (score >= beta) return beta;
+    if (score > alpha) alpha = score;
+  }
+  return alpha;
+}
+
+function negamax(b, color, depth, alpha, beta, ply, ctx) {
+  if ((++ctx.nodes & 255) === 0 && performance.now() > ctx.deadline) ctx.abort = true;
+  if (ctx.abort) return 0;
+  if (depth === 0) return ctx.quiesce ? quiesce(b, color, alpha, beta, ctx, 0) : evalFor(b, color);
+
+  const moves = genMoves(b, color, false, ctx.cool[color]);
+  if (!moves.length) return isKingInCheck(b, color) ? -MATE + ply : 0;   // mate ou afogamento
+  orderMoves(b, moves);
+
+  for (const mv of moves) {
+    const rec = doMove(b, mv);
+    const wasCool = ctx.cool[color];
+    ctx.cool[color] = mv.type === 'merge';          // quem acabou de fundir não funde no próximo lance
+    const score = -negamax(b, other(color), depth - 1, -beta, -alpha, ply + 1, ctx);
+    ctx.cool[color] = wasCool;
+    undoMove(b, mv, rec);
+    if (ctx.abort) return 0;
+    if (score >= beta) return beta;
+    if (score > alpha) alpha = score;
+  }
+  return alpha;
+}
+
+const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+/* Escolhe o lance da IA. Cede o controle ao navegador entre lances da raiz para a tela não travar. */
+async function aiChoose(board, color, levelKey, token) {
+  const L = AI_LEVELS[levelKey];
+  const b = cloneBoard(board);                       // busca em uma cópia
+  const enemy = other(color);
+  const cool = { white: mergeBlocked('white'), black: mergeBlocked('black') };   // pausa de fusão de cada lado
+  const rootCool = cool[color];
+  const moves = genMoves(b, color, false, rootCool);
+  if (!moves.length) return null;
+  if (moves.length === 1) return moves[0];
+  shuffle(moves);                                    // variedade entre lances equivalentes
+  if (L.blunder && Math.random() < L.blunder) return moves[0];
+
+  // Desencoraja desfazer o próprio lance anterior (evita a IA ficar indo e voltando)
+  const mine = G.history.filter((h) => h.color === color).pop();
+  const undoes = (mv) => !!mine && sqName(mv.fr, mv.fc) === mine.to && sqName(mv.r, mv.c) === mine.from;
+
+  // Nos finais (poucas unidades) dá para olhar um lance a mais
+  let units = 0;
+  b.forEach((row) => row.forEach((cell) => { if (cell.length) units++; }));
+  const maxDepth = L.depth + (L.quiesce && units <= 8 ? 1 : 0);
+
+  const ctx = { nodes: 0, abort: false, deadline: performance.now() + L.timeMs, quiesce: L.quiesce, cool };
+  // Média: um pouco de ruído só na abertura, para as partidas não começarem sempre igual
+  const noise = L.noise || (G.history.length < 8 ? 25 : 0);
+  const noisy = noise > 0;                           // com ruído precisa da nota exata de cada lance
+  orderMoves(b, moves);
+  let order = moves, best = moves[0];
+
+  for (let d = noisy ? maxDepth : 1; d <= maxDepth; d++) {
+    let alpha = -Infinity, iterBest = null;
+    for (let i = 0; i < order.length; i++) {
+      const mv = order[i];
+      const rec = doMove(b, mv);
+      ctx.cool[color] = mv.type === 'merge';
+      let s = -negamax(b, enemy, d - 1, -Infinity, noisy ? Infinity : -alpha, 1, ctx);
+      ctx.cool[color] = rootCool;                          // volta ao estado real
+      undoMove(b, mv, rec);
+      if (ctx.abort) break;
+      if (undoes(mv)) s -= 15;
+      if (noisy) s += (Math.random() * 2 - 1) * noise;
+      if (s > alpha || !iterBest) { alpha = s; iterBest = mv; }
+      if (i % 2 === 1) { await tick(); if (token !== aiToken) return null; }
+    }
+    if (ctx.abort || !iterBest) break;               // descarta a profundidade incompleta
+    best = iterBest;
+    order = [iterBest, ...order.filter((m) => m !== iterBest)];
+    if (alpha > MATE - 100) break;                   // mate encontrado
+  }
+  return token === aiToken ? best : null;
+}
+
+function maybeAiMove(force) {
+  if (!G.ai || G.over || G.promo || !G.ai[G.turn]) return;
+  if (G.aiPaused && !force) return;                  // IA vs IA pausada: espera Continuar ou Próxima jogada
+  const token = ++aiToken;
+  const color = G.turn, level = G.ai[color];
+  G.thinking = true;
+  renderTags(); renderStatus();
+  const delay = SPEED_DELAY[setup.aiSpeed] || 450;
+  setTimeout(async () => {                           // pausa curta: deixa o lance anterior terminar de deslizar
+    if (token !== aiToken) return;
+    let mv = null;
+    try { mv = await aiChoose(G.board, color, level, token); }
+    catch (e) { console.error('AI error:', e); }
+    if (token !== aiToken) return;
+    G.thinking = false;
+    if (!mv) { renderTags(); renderStatus(); return; }
+    executeMove({ r: mv.fr, c: mv.fc }, { r: mv.r, c: mv.c });
+  }, delay);
+}
+
+/* ---------- Tela "Nova partida" ---------- */
+const OPP_HINT = {
+  human: 'Two players on the same device, each on their own turn.',
+  easy: 'Sees the opponent\'s reply and avoids losing pieces for free, but doesn\'t plan ahead and makes mistakes. Good for learning fusion.',
+  medium: 'Calculates three moves ahead (four in endgames), trades pieces wisely and fuses when it pays off. Takes up to 2 seconds per move.',
+  hard: 'Calculates four moves ahead (five in endgames) and plays very precisely. May take up to 3.5 seconds per move.',
+  ai_vs_ai: 'The two AIs play each other on their own. Choose each side\'s difficulty and the speed below — you can pause and step through move by move whenever you like.'
+};
+
+const GM_HINT = {
+  fusion: 'Fusion Chess as usual: both sides can fuse pieces.',
+  versus: 'One side plays classic chess with the normal rules. The other plays Fusion Chess in Balanced mode. Works against a person, against the AI, or AI vs AI.'
+};
+
+const MODE_HINT = {
+  balanced: 'All rules on. More strategic fusions and evenly matched games.',
+  chaos: 'No rules on: any piece except the King fuses with any other, with no cooldown and no limits on promotion.',
+  custom: 'Choose below which rules are active in this game.'
+};
+
+function openSetup() { pending = { ...setup, custom: { ...setup.custom } }; paintSetup(); openModal('modal-setup'); }
+function pickSetup(key, value) {
+  // Ao abrir o Personalizado pela primeira vez, parte das regras que o preset atual mostra
+  if (key === 'mode' && value === 'custom' && pending.mode !== 'custom' && !pending.customEdited) pending.custom = rulesFor(pending);
+  pending[key] = value;
+  paintSetup();
+}
+function toggleRule(key) {
+  if (pending.mode !== 'custom') return;
+  pending.custom[key] = !pending.custom[key];
+  pending.customEdited = true;
+  paintSetup();
+}
+function paintSetup() {
+  const versus = pending.gameMode === 'versus';
+  const roleOf = (color) => (color === pending.fusionSide ? 'Fusion' : 'Classic');
+  document.querySelectorAll('#seg-gamemode button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.gameMode)));
+  document.querySelectorAll('#seg-fusionside button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.fusionSide)));
+  $('field-fusionside').hidden = !versus;
+  $('field-mode').hidden = versus;                       // no Clássico vs Fusion o modo é sempre Balanceado
+  $('gm-hint').textContent = GM_HINT[pending.gameMode];
+  document.querySelectorAll('#seg-side button').forEach((b) => { b.textContent = `${SIDE_NAME[b.dataset.v]}${versus ? ` · ${roleOf(b.dataset.v)}` : ''}`; });
+  $('lbl-ai-white').textContent = `White's difficulty${versus ? ` (${roleOf('white')})` : ''}`;
+  $('lbl-ai-black').textContent = `Black's difficulty${versus ? ` (${roleOf('black')})` : ''}`;
+  document.querySelectorAll('#seg-opponent button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.opponent)));
+  document.querySelectorAll('#seg-side button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.side)));
+  document.querySelectorAll('#seg-mode button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.mode)));
+  document.querySelectorAll('#seg-ai-white button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.aiWhite)));
+  document.querySelectorAll('#seg-ai-black button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.aiBlack)));
+  document.querySelectorAll('#seg-ai-speed button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.aiSpeed)));
+  $('field-side').hidden = pending.opponent === 'human' || pending.opponent === 'ai_vs_ai';
+  $('field-aivai').hidden = pending.opponent !== 'ai_vs_ai';
+  $('opp-hint').textContent = OPP_HINT[pending.opponent];
+  $('mode-hint').textContent = MODE_HINT[pending.mode];
+
+  const flags = rulesFor(pending), editable = pending.mode === 'custom';
+  $('rule-list').innerHTML = RULE_DEFS.map((d) => `
+    <button type="button" class="rule-row" role="switch" data-k="${d.key}" aria-checked="${flags[d.key]}"${editable ? '' : ' disabled'} onclick="toggleRule('${d.key}')">
+      <span class="txt"><strong>${d.title}</strong><small>${d.short}</small></span>
+      <span class="sw" aria-hidden="true"></span>
+    </button>`).join('');
+}
+function applySetup() { setup = { ...pending, custom: { ...pending.custom } }; closeModal('modal-setup'); resetGame(); }
+
+/* ---------- Modal "Regras": mostra o estado real das regras da partida ---------- */
+const RULE_ART = {
+  noKnightQueen: () => `${pieceSVG('knight', 'white')}<span class="arrow">✕</span>${pieceSVG('queen', 'white')}`,
+  noRookBishop: () => `${pieceSVG('rook', 'white')}<span class="arrow">✕</span>${pieceSVG('bishop', 'white')}`,
+  cooldown: () => `<div class="piece" style="inset:0 0 14px">${unitHTML(['bishop', 'knight'], 'white')}</div><span class="badge">1 turn</span>`,
+  promoDiff: () => `<div class="piece" style="inset:0 0 14px">${unitHTML(['pawn', 'rook'], 'white')}</div><span class="badge">≠ Rook</span>`
+};
+const RULE_LONG = {
+  noKnightQueen: 'Knight and Queen never fuse. This also applies to promotion: Pawn + Knight cannot become Queen + Knight.',
+  noRookBishop: 'Rook and Bishop never fuse. This also applies to promotion: Pawn + Rook cannot become Bishop + Rook.',
+  cooldown: 'After fusing, your next move must be a regular move or a capture. Fused on your 1st move? You can only fuse again on your 3rd.',
+  promoDiff: 'On promotion, the fused pawn must become a piece different from its partner. Rook + Pawn, for example, can never become Rook + Rook.'
+};
+
+function openRules() {
+  $('rules-lead').textContent = G.gameMode === 'versus'
+    ? `One side plays classic chess, with no fusions. The other plays Fusion Chess and can fuse two of its pieces into one. In this game, ${SIDE_NAME[G.classicSide]} plays classic and ${SIDE_NAME[other(G.classicSide)]} plays Fusion.`
+    : 'Chess as usual, with one extra move: fuse two of your pieces into one.';
+  $('rules-head').innerHTML = `Rules for this game: ${MODE_LABEL[G.mode]} <span>(${activeRuleCount()} of ${RULE_DEFS.length} active)</span>`;
+  $('rules-dynamic').innerHTML = RULE_DEFS.map((d) => {
+    const on = !!G.rules[d.key];
+    return `<div class="rule${on ? '' : ' off'}">
+      <div class="art${d.key.startsWith('no') ? ' row' : ''}">${RULE_ART[d.key]()}</div>
+      <div><h3>${d.title} <span class="pill${on ? ' on' : ''}">${on ? 'Active' : 'Disabled'}</span></h3><p>${RULE_LONG[d.key]}</p></div>
+    </div>`;
+  }).join('');
+  openModal('modal-rules');
+}
+
+/* ==========================================================
+   10. Ilustrações estáticas (logo, painel, regras)
+   ========================================================== */
+function paintStatic() {
+  $('brand-mark').innerHTML = unitHTML(['knight', 'bishop'], 'white');
+  $('demo-hybrid').innerHTML = `<div class="piece">${unitHTML(['rook', 'knight'], 'white')}</div>`;
+  $('art-fuse').innerHTML = `<div class="piece">${unitHTML(['knight', 'bishop'], 'white')}</div>`;
+  $('art-limits').innerHTML = `${pieceSVG('king', 'white')}<span class="arrow">✕</span>${pieceSVG('rook', 'white')}`;
+  $('art-unit').innerHTML = `<div class="piece">${unitHTML(['rook', 'pawn'], 'black')}</div>`;
+  $('art-promo').innerHTML = `<div class="piece">${unitHTML(['queen', 'bishop'], 'white')}</div>`;
+}
+
+window.addEventListener('DOMContentLoaded', () => { paintStatic(); startGame(); });
+</script>
+</body>
+</html>
