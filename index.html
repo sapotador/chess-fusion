@@ -89,6 +89,20 @@ button { font-family: inherit; color: inherit; }
 .btn.primary:hover:not(:disabled) { background: #e2b962; border-color: #e2b962; }
 .btn:focus-visible, .sq:focus-visible, .mode-chip:focus-visible, .rule-row:focus-visible { outline: 3px solid var(--brass); outline-offset: 2px; }
 
+.lang-switch {
+  display: flex; align-items: center; border: 1px solid var(--line); border-radius: 9px;
+  overflow: hidden; margin-left: 2px; flex-shrink: 0;
+}
+.lang-opt {
+  font-family: inherit; font-weight: 800; font-size: 12px; letter-spacing: .3px; line-height: 1;
+  min-height: 40px; padding: 0 12px; border: 0; background: rgba(255, 255, 255, .02); color: var(--muted);
+  cursor: pointer; transition: background .15s, color .15s;
+}
+.lang-opt + .lang-opt { border-left: 1px solid var(--line); }
+.lang-opt:hover { background: rgba(255, 255, 255, .06); color: var(--text); }
+.lang-opt[aria-checked="true"] { background: var(--brass); color: #1b1406; }
+.lang-opt:focus-visible { outline: 3px solid var(--brass); outline-offset: 2px; }
+
 /* ==========================================================
    Palco
    ========================================================== */
@@ -387,7 +401,7 @@ button { font-family: inherit; color: inherit; }
     <div class="brand-mark" id="brand-mark" aria-hidden="true"></div>
     <div>
       <h1>Fusion Chess</h1>
-      <p>Fuse pieces. Conquer the board.</p>
+      <p id="brand-tagline">Fuse pieces. Conquer the board.</p>
     </div>
   </div>
   <div class="actions">
@@ -400,6 +414,10 @@ button { font-family: inherit; color: inherit; }
     <button class="btn" id="btn-sound" onclick="toggleSound()" aria-pressed="true">Sound<span class="snd"> on</span></button>
     <button class="btn" onclick="openRules()">Rules</button>
     <button class="btn primary" onclick="openSetup()">New game</button>
+    <div class="lang-switch" role="radiogroup" aria-label="Language / Idioma" id="lang-switch">
+      <button type="button" class="lang-opt" data-lang="en" role="radio" onclick="setLang('en')">EN</button>
+      <button type="button" class="lang-opt" data-lang="pt" role="radio" onclick="setLang('pt')">PT</button>
+    </div>
   </div>
 </header>
 
@@ -429,7 +447,7 @@ button { font-family: inherit; color: inherit; }
       <span class="review-pos" id="review-pos">Move 0 / 0</span>
     </div>
     <div class="section-head">
-      <span>Moves</span>
+      <span id="section-moves-label">Moves</span>
       <span class="right">
         <span class="count" id="move-count">0</span>
         <button type="button" class="btn mini" id="btn-copy" onclick="copyHistory()" disabled title="Copy the move and fusion history">
@@ -464,25 +482,25 @@ button { font-family: inherit; color: inherit; }
 
     <div class="rule">
       <div class="art" id="art-fuse"></div>
-      <div><h3>Fuse</h3><p>Move a piece onto another of the same color (violet square). They become one unit with the moves of both. Fusing uses up your turn.</p></div>
+      <div><h3 id="rule-fuse-title">Fuse</h3><p id="rule-fuse-desc">Move a piece onto another of the same color (violet square). They become one unit with the moves of both. Fusing uses up your turn.</p></div>
     </div>
     <div class="rule">
       <div class="art row" id="art-limits"></div>
-      <div><h3>Limits</h3><p>At most two pieces per square. A fused unit cannot fuse again. The King is left out.</p></div>
+      <div><h3 id="rule-limits-title">Limits</h3><p id="rule-limits-desc">At most two pieces per square. A fused unit cannot fuse again. The King is left out.</p></div>
     </div>
     <div class="rule">
       <div class="art" id="art-unit"></div>
-      <div><h3>Absolute unit</h3><p>Fusion is permanent. The unit moves together and is captured together: both pieces leave the board at once.</p></div>
+      <div><h3 id="rule-unit-title">Absolute unit</h3><p id="rule-unit-desc">Fusion is permanent. The unit moves together and is captured together: both pieces leave the board at once.</p></div>
     </div>
     <div class="rule">
       <div class="art" id="art-promo"></div>
-      <div><h3>Promotion</h3><p>If a unit containing a pawn reaches the last rank, only the pawn is promoted. The other piece stays the same.</p></div>
+      <div><h3 id="rule-promo-title">Promotion</h3><p id="rule-promo-desc">If a unit containing a pawn reaches the last rank, only the pawn is promoted. The other piece stays the same.</p></div>
     </div>
 
     <div class="rules-head" id="rules-head"></div>
     <div id="rules-dynamic"></div>
 
-    <div class="foot"><button class="btn primary" onclick="closeModal('modal-rules')">Got it, let's play</button></div>
+    <div class="foot"><button class="btn primary" id="rules-gotit-btn" onclick="closeModal('modal-rules')">Got it, let's play</button></div>
   </div>
 </div>
 
@@ -490,7 +508,7 @@ button { font-family: inherit; color: inherit; }
 <div class="overlay" id="modal-setup" role="dialog" aria-modal="true" aria-labelledby="setup-title">
   <div class="sheet">
     <h2 id="setup-title">New game</h2>
-    <p class="lead">Choose the game mode, who to play against, and which rules to use.</p>
+    <p class="lead" id="setup-lead">Choose the game mode, who to play against, and which rules to use.</p>
 
     <div class="field" style="margin-top:18px">
       <div class="field-label" id="lbl-gm">Game mode</div>
@@ -507,7 +525,7 @@ button { font-family: inherit; color: inherit; }
         <button type="button" role="radio" data-v="white" onclick="pickSetup('fusionSide', 'white')">White</button>
         <button type="button" role="radio" data-v="black" onclick="pickSetup('fusionSide', 'black')">Black</button>
       </div>
-      <p class="hint short" style="margin-bottom:0">The other side plays classic chess, with no fusions.</p>
+      <p class="hint short" id="fside-hint" style="margin-bottom:0">The other side plays classic chess, with no fusions.</p>
     </div>
 
     <div class="field">
@@ -549,7 +567,7 @@ button { font-family: inherit; color: inherit; }
         <button type="button" role="radio" data-v="normal" onclick="pickSetup('aiSpeed', 'normal')">Normal</button>
         <button type="button" role="radio" data-v="fast" onclick="pickSetup('aiSpeed', 'fast')">Fast</button>
       </div>
-      <p class="hint short">You can pause and step through the game move by move at any time.</p>
+      <p class="hint short" id="aispeed-hint">You can pause and step through the game move by move at any time.</p>
     </div>
 
     <div class="field" id="field-mode">
@@ -564,8 +582,8 @@ button { font-family: inherit; color: inherit; }
     </div>
 
     <div class="foot">
-      <button class="btn" onclick="closeModal('modal-setup')">Cancel</button>
-      <button class="btn primary" onclick="applySetup()">Start</button>
+      <button class="btn" id="setup-cancel-btn" onclick="closeModal('modal-setup')">Cancel</button>
+      <button class="btn primary" id="setup-start-btn" onclick="applySetup()">Start</button>
     </div>
   </div>
 </div>
@@ -577,8 +595,8 @@ button { font-family: inherit; color: inherit; }
     <h2 id="over-title">Checkmate</h2>
     <p class="lead" id="over-desc"></p>
     <div class="foot">
-      <button class="btn" onclick="closeModal('modal-gameover')">View board</button>
-      <button class="btn primary" onclick="closeModal('modal-gameover'); resetGame();">Play again</button>
+      <button class="btn" id="over-viewboard-btn" onclick="closeModal('modal-gameover')">View board</button>
+      <button class="btn primary" id="over-playagain-btn" onclick="closeModal('modal-gameover'); resetGame();">Play again</button>
     </div>
   </div>
 </div>
@@ -588,19 +606,263 @@ button { font-family: inherit; color: inherit; }
    1. Constantes e utilidades
    ========================================================== */
 const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-const NAMES = { king: 'King', queen: 'Queen', rook: 'Rook', bishop: 'Bishop', knight: 'Knight', pawn: 'Pawn' };
 const VALUE = { queen: 5, rook: 4, bishop: 3, knight: 2, pawn: 1, king: 0 };
-const SIDE_NAME = { white: 'White', black: 'Black' };
+
+/* ==========================================================
+   0. Internacionalização (EN / PT)
+   ========================================================== */
+const I18N = {
+  en: {
+    tagline: 'Fuse pieces. Conquer the board.',
+    pieces: { king: 'King', queen: 'Queen', rook: 'Rook', bishop: 'Bishop', knight: 'Knight', pawn: 'Pawn' },
+    sides: { white: 'White', black: 'Black' },
+    you: 'You',
+    modeLabel: { balanced: 'Balanced', chaos: 'Chaos', custom: 'Custom' },
+    rules: {
+      noKnightQueen: { title: 'Knight + Queen', short: 'Knight and Queen cannot fuse.' },
+      noRookBishop:  { title: 'Rook + Bishop',  short: 'Rook and Bishop cannot fuse.' },
+      cooldown:      { title: 'Fusion cooldown', short: 'After fusing, the next move cannot be a fusion.' },
+      promoDiff:     { title: 'Different promotion', short: 'A fused pawn can only become a piece different from its partner.' }
+    },
+    ruleLong: {
+      noKnightQueen: 'Knight and Queen never fuse. This also applies to promotion: Pawn + Knight cannot become Queen + Knight.',
+      noRookBishop: 'Rook and Bishop never fuse. This also applies to promotion: Pawn + Rook cannot become Bishop + Rook.',
+      cooldown: 'After fusing, your next move must be a regular move or a capture. Fused on your 1st move? You can only fuse again on your 3rd.',
+      promoDiff: 'On promotion, the fused pawn must become a piece different from its partner. Rook + Pawn, for example, can never become Rook + Rook.'
+    },
+    aiLevel: { easy: 'Easy AI', medium: 'Medium AI', hard: 'Strong AI' },
+    diff: { easy: 'Easy', medium: 'Medium', hard: 'Strong' },
+    oppHint: {
+      human: 'Two players on the same device, each on their own turn.',
+      easy: 'Sees the opponent\'s reply and avoids losing pieces for free, but doesn\'t plan ahead and makes mistakes. Good for learning fusion.',
+      medium: 'Calculates three moves ahead (four in endgames), trades pieces wisely and fuses when it pays off. Takes up to 2 seconds per move.',
+      hard: 'Calculates four moves ahead (five in endgames) and plays very precisely. May take up to 3.5 seconds per move.',
+      ai_vs_ai: 'The two AIs play each other on their own. Choose each side\'s difficulty and the speed below — you can pause and step through move by move whenever you like.'
+    },
+    gmHint: {
+      fusion: 'Fusion Chess as usual: both sides can fuse pieces.',
+      versus: 'One side plays classic chess with the normal rules. The other plays Fusion Chess in Balanced mode. Works against a person, against the AI, or AI vs AI.'
+    },
+    modeHint: {
+      balanced: 'All rules on. More strategic fusions and evenly matched games.',
+      chaos: 'No rules on: any piece except the King fuses with any other, with no cooldown and no limits on promotion.',
+      custom: 'Choose below which rules are active in this game.'
+    },
+    ui: {
+      brandTagline: 'Fuse pieces. Conquer the board.',
+      undo: 'Undo', back: 'Back', backTitle: 'Step back one move', resume: 'Back to current',
+      pause: 'Pause', resumeAi: 'Resume', nextMove: 'Next move', flip: 'Flip',
+      sound: 'Sound', soundOn: 'on', soundOff: 'off',
+      rules: 'Rules', newGame: 'New game',
+      ariaBoardSection: 'Board', ariaChessBoard: 'Chess board', ariaGame: 'Game',
+      modeChipTitle: 'View the rules for this game',
+      reviewPrev: 'Previous move', reviewPlay: 'Play', reviewPauseTitle: 'Pause', reviewNext: 'Next move',
+      movePos: (i, n) => `Move ${i} / ${n}`,
+      moves: 'Moves', copyHistoryTitle: 'Copy the move and fusion history', copy: 'Copy',
+      copied: 'Copied!', copyFailed: 'Could not copy', copiedStatus: 'History copied to the clipboard.',
+      movesEmpty: 'Moves will appear here.',
+      promoTitle: 'Promote the pawn', promoLeadDefault: 'Choose the new piece. The other half of the unit stays the same.',
+      promoLeadFused: (partner) => `The pawn is fused with ${partner}: it must become a different piece.`,
+      promoAlready: 'Already the fused piece', promoCantFuse: (n) => `Can't fuse with ${n}`,
+      rulesTitle: 'Fusion rules', rulesLeadDefault: 'Chess as usual, with one extra move: fuse two of your pieces into one.',
+      rulesLeadVersus: (classicN, fusionN) => `One side plays classic chess, with no fusions. The other plays Fusion Chess and can fuse two of its pieces into one. In this game, ${classicN} plays classic and ${fusionN} plays Fusion.`,
+      ruleFuseTitle: 'Fuse', ruleFuseDesc: 'Move a piece onto another of the same color (violet square). They become one unit with the moves of both. Fusing uses up your turn.',
+      ruleLimitsTitle: 'Limits', ruleLimitsDesc: 'At most two pieces per square. A fused unit cannot fuse again. The King is left out.',
+      ruleUnitTitle: 'Absolute unit', ruleUnitDesc: 'Fusion is permanent. The unit moves together and is captured together: both pieces leave the board at once.',
+      rulePromoTitle: 'Promotion', rulePromoDesc: 'If a unit containing a pawn reaches the last rank, only the pawn is promoted. The other piece stays the same.',
+      rulesHead: (mode, active, total) => `Rules for this game: ${mode} (${active} of ${total} active)`,
+      active: 'Active', disabled: 'Disabled', gotIt: "Got it, let's play",
+      setupTitle: 'New game', setupLead: 'Choose the game mode, who to play against, and which rules to use.',
+      lblGm: 'Game mode', gameModeFusion: 'Fusion Chess', gameModeVersus: 'Classic vs Fusion',
+      lblFside: 'Who plays Fusion', fsideHint: 'The other side plays classic chess, with no fusions.',
+      lblOpp: 'Opponent', oppHuman: 'Two players', oppEasy: 'Easy AI', oppMedium: 'Medium AI', oppHard: 'Strong AI', oppAivai: 'AI vs AI',
+      lblSide: 'You play as',
+      lblAiWhite: "White's difficulty", lblAiBlack: "Black's difficulty", roleSuffix: (r) => ` (${r})`,
+      lblAiSpeed: 'Move speed', speedSlow: 'Slow', speedNormal: 'Normal', speedFast: 'Fast',
+      aiSpeedHint: 'You can pause and step through the game move by move at any time.',
+      lblMode: 'Fusion rules', cancel: 'Cancel', start: 'Start',
+      chipFusionSide: (name) => `Fusion: ${name}`, chipRules: (n, total) => `${n} of ${total} rules`,
+      overCheckmate: 'Checkmate', overDraw: 'Draw', overStalemateSub: 'Stalemate: no legal moves.',
+      overViewBoard: 'View board', overPlayAgain: 'Play again',
+      wonGame: (s) => `${s} won the game.`, youWonGame: 'You won the game.',
+      aiWonGame: (lvl) => `The ${lvl} won the game.`,
+      drawStalemateTitle: 'Draw by stalemate', drawStalemateDesc: 'The player to move has no legal moves.',
+      drawRepetitionTitle: 'Draw by repetition', drawRepetitionDesc: 'The same position has occurred three times.',
+      drawFiftyTitle: 'Draw by the 50-move rule', drawFiftyDesc: '50 moves have passed for each side with no capture, fusion, or pawn move.',
+      matchReview: 'Match review', goToResult: 'Go to result', backToCurrent: 'Back to current',
+      reviewStatus: (i, n) => `Move ${i} of ${n}`,
+      sideWins: (s) => `${s} wins`,
+      checkmateBothAi: 'Checkmate. Start a new game.', checkmateUndo: 'Checkmate. Use Undo or start a new game.',
+      turnTitle: (s) => `${s}'s turn`,
+      aiKingInCheck: "The AI's king is in check.", yourKingInCheck: 'Your king is in check.',
+      aiThinking: 'The AI is thinking…', choosePromo: 'Choose the promotion piece.',
+      legendClassic: 'Dot: move. Red ring: capture. Classic chess: no fusion.',
+      legendBlocked: 'Dot: move. Red ring: capture. Fusion blocked this turn.',
+      legendFusion: 'Dot: move. Red ring: capture. Violet ring: fuse.',
+      noLegalMoves: 'This piece has no legal moves right now.',
+      justFused: (s) => `${s} fused on the previous move: now they can only move or capture.`,
+      tapPiece: 'Tap a piece to see its moves.',
+      inCheck: 'in check', thinking: 'thinking…', playingNoFusion: 'playing · no fusion', playing: 'playing',
+      classic: 'Classic', fusion: 'Fusion', capturedPieces: 'Captured pieces',
+      fusedWith: ' fused with ', empty: 'empty',
+      versusFusionNote: (classicN, fusionN) => `<strong>Classic vs Fusion</strong>: ${classicN} plays regular chess, with no fusions. ${fusionN} can move a piece onto another of their own to fuse them.`,
+      fusionNote: '<strong>Rook + Knight</strong> move as a single unit: in straight lines and in an L. Move a piece onto another of yours to fuse them.',
+      cooldownNote: ' After a fusion, the next move cannot be a fusion.',
+      exportHeader: 'FUSION CHESS: game history', exportGame: (v) => `Game: ${v}`,
+      twoPlayersLabel: 'White vs Black (two players)',
+      exportModeVersus: (c, f) => `Mode: Classic vs Fusion (${c} plays classic, ${f} plays Fusion)`,
+      exportRules: (mode, activeText) => `Rules: ${mode} (${activeText})`,
+      exportActiveList: (list) => `active: ${list}`, exportNoRules: 'no optional rules active',
+      exportStatus: (s) => `Status: ${s}`, exportInProgress: 'in progress',
+      exportCheckmateWon: (s) => `checkmate, ${s} won`,
+      exportDrawStalemate: 'draw by stalemate', exportDrawRepetition: 'draw by repetition',
+      exportDrawFifty: 'draw by the 50-move rule', exportDraw: 'draw',
+      exportMovesHeader: 'MOVES', exportFusionsHeader: 'FUSIONS',
+      exportNoFusions: 'No fusions so far.', exportNone: 'none',
+      exportFusedUnit: (name) => `${name} (fused unit)`,
+      exportFusionLine: (p1, from, p2, to, into) => `FUSION: ${p1} ${from} fused with ${p2} ${to} → unit ${into} + ${p1} at ${to}`,
+      exportCapture: (who, from, to, taken) => `${who} ${from} × ${to} (captured ${taken})`,
+      exportMove: (who, from, to) => `${who} ${from} → ${to}`,
+      exportUnitCaptured: (name) => `unit ${name}`,
+      exportPromotion: (piece) => ` | Promotion: Pawn → ${piece}`,
+      exportUnitNow: (name) => ` (unit now: ${name})`,
+      exportCheckmateSuffix: ' | checkmate', exportCheckSuffix: ' | check',
+      exportFusionAt: (into, p1, to, n) => `${into} + ${p1} at ${to} (move ${n})`
+    }
+  },
+  pt: {
+    tagline: 'Funda peças. Conquiste o tabuleiro.',
+    pieces: { king: 'Rei', queen: 'Dama', rook: 'Torre', bishop: 'Bispo', knight: 'Cavalo', pawn: 'Peão' },
+    sides: { white: 'Brancas', black: 'Pretas' },
+    you: 'Você',
+    modeLabel: { balanced: 'Balanceado', chaos: 'Caos', custom: 'Personalizado' },
+    rules: {
+      noKnightQueen: { title: 'Cavalo + Dama', short: 'Cavalo e Dama não podem se fundir.' },
+      noRookBishop:  { title: 'Torre + Bispo', short: 'Torre e Bispo não podem se fundir.' },
+      cooldown:      { title: 'Cooldown de fusão', short: 'Depois de fundir, a próxima jogada não pode ser outra fusão.' },
+      promoDiff:     { title: 'Promoção diferente', short: 'Um peão fundido só pode virar uma peça diferente da sua parceira.' }
+    },
+    ruleLong: {
+      noKnightQueen: 'Cavalo e Dama nunca se fundem. Isso também vale na promoção: Peão + Cavalo não pode virar Dama + Cavalo.',
+      noRookBishop: 'Torre e Bispo nunca se fundem. Isso também vale na promoção: Peão + Torre não pode virar Bispo + Torre.',
+      cooldown: 'Depois de fundir, sua próxima jogada precisa ser um movimento normal ou uma captura. Fundiu na 1ª jogada? Só pode fundir de novo na 3ª.',
+      promoDiff: 'Na promoção, o peão fundido precisa virar uma peça diferente da sua parceira. Torre + Peão, por exemplo, nunca pode virar Torre + Torre.'
+    },
+    aiLevel: { easy: 'IA Fácil', medium: 'IA Média', hard: 'IA Forte' },
+    diff: { easy: 'Fácil', medium: 'Média', hard: 'Forte' },
+    oppHint: {
+      human: 'Dois jogadores no mesmo aparelho, cada um na sua vez.',
+      easy: 'Vê a resposta do adversário e evita perder peças de graça, mas não planeja com antecedência e comete erros. Boa para aprender a fusão.',
+      medium: 'Calcula três jogadas à frente (quatro em finais), troca peças com sabedoria e funde quando vale a pena. Leva até 2 segundos por jogada.',
+      hard: 'Calcula quatro jogadas à frente (cinco em finais) e joga com muita precisão. Pode levar até 3,5 segundos por jogada.',
+      ai_vs_ai: 'As duas IAs jogam uma contra a outra sozinhas. Escolha a dificuldade de cada lado e a velocidade abaixo — você pode pausar e avançar jogada a jogada quando quiser.'
+    },
+    gmHint: {
+      fusion: 'Xadrez Fusão como de costume: os dois lados podem fundir peças.',
+      versus: 'Um lado joga xadrez clássico, com as regras normais. O outro joga Xadrez Fusão no modo Balanceado. Funciona contra uma pessoa, contra a IA, ou IA contra IA.'
+    },
+    modeHint: {
+      balanced: 'Todas as regras ativas. Fusões mais estratégicas e partidas equilibradas.',
+      chaos: 'Nenhuma regra ativa: qualquer peça, exceto o Rei, se funde com qualquer outra, sem cooldown e sem limites na promoção.',
+      custom: 'Escolha abaixo quais regras ficam ativas nesta partida.'
+    },
+    ui: {
+      brandTagline: 'Funda peças. Conquiste o tabuleiro.',
+      undo: 'Desfazer', back: 'Voltar', backTitle: 'Voltar uma jogada', resume: 'Voltar ao atual',
+      pause: 'Pausar', resumeAi: 'Continuar', nextMove: 'Próxima jogada', flip: 'Girar',
+      sound: 'Som', soundOn: 'ligado', soundOff: 'desligado',
+      rules: 'Regras', newGame: 'Nova partida',
+      ariaBoardSection: 'Tabuleiro', ariaChessBoard: 'Tabuleiro de xadrez', ariaGame: 'Jogo',
+      modeChipTitle: 'Ver as regras desta partida',
+      reviewPrev: 'Jogada anterior', reviewPlay: 'Reproduzir', reviewPauseTitle: 'Pausar', reviewNext: 'Próxima jogada',
+      movePos: (i, n) => `Jogada ${i} / ${n}`,
+      moves: 'Jogadas', copyHistoryTitle: 'Copiar o histórico de jogadas e fusões', copy: 'Copiar',
+      copied: 'Copiado!', copyFailed: 'Não foi possível copiar', copiedStatus: 'Histórico copiado para a área de transferência.',
+      movesEmpty: 'As jogadas vão aparecer aqui.',
+      promoTitle: 'Promover o peão', promoLeadDefault: 'Escolha a nova peça. A outra metade da unidade continua igual.',
+      promoLeadFused: (partner) => `O peão está fundido com ${partner}: ele precisa virar uma peça diferente.`,
+      promoAlready: 'Já é a peça fundida', promoCantFuse: (n) => `Não pode se fundir com ${n}`,
+      rulesTitle: 'Regras da fusão', rulesLeadDefault: 'Xadrez como de costume, com uma jogada extra: fundir duas peças suas em uma só.',
+      rulesLeadVersus: (classicN, fusionN) => `Um lado joga xadrez clássico, sem fusões. O outro joga Xadrez Fusão e pode fundir duas de suas peças em uma só. Nesta partida, ${classicN} joga clássico e ${fusionN} joga Fusão.`,
+      ruleFuseTitle: 'Fundir', ruleFuseDesc: 'Mova uma peça sobre outra da mesma cor (casa violeta). Elas viram uma unidade com os movimentos das duas. Fundir usa sua jogada.',
+      ruleLimitsTitle: 'Limites', ruleLimitsDesc: 'No máximo duas peças por casa. Uma unidade fundida não pode se fundir de novo. O Rei fica de fora.',
+      ruleUnitTitle: 'Unidade absoluta', ruleUnitDesc: 'A fusão é permanente. A unidade se move junto e é capturada junto: as duas peças saem do tabuleiro de uma vez.',
+      rulePromoTitle: 'Promoção', rulePromoDesc: 'Se uma unidade com um peão chega à última fileira, só o peão é promovido. A outra peça continua igual.',
+      rulesHead: (mode, active, total) => `Regras desta partida: ${mode} (${active} de ${total} ativas)`,
+      active: 'Ativa', disabled: 'Desativada', gotIt: 'Entendi, vamos jogar',
+      setupTitle: 'Nova partida', setupLead: 'Escolha o modo de jogo, contra quem jogar e quais regras usar.',
+      lblGm: 'Modo de jogo', gameModeFusion: 'Xadrez Fusão', gameModeVersus: 'Clássico vs Fusão',
+      lblFside: 'Quem joga Fusão', fsideHint: 'O outro lado joga xadrez clássico, sem fusões.',
+      lblOpp: 'Adversário', oppHuman: 'Dois jogadores', oppEasy: 'IA Fácil', oppMedium: 'IA Média', oppHard: 'IA Forte', oppAivai: 'IA vs IA',
+      lblSide: 'Você joga como',
+      lblAiWhite: 'Dificuldade das Brancas', lblAiBlack: 'Dificuldade das Pretas', roleSuffix: (r) => ` (${r})`,
+      lblAiSpeed: 'Velocidade das jogadas', speedSlow: 'Lenta', speedNormal: 'Normal', speedFast: 'Rápida',
+      aiSpeedHint: 'Você pode pausar e avançar a partida jogada a jogada a qualquer momento.',
+      lblMode: 'Regras de fusão', cancel: 'Cancelar', start: 'Começar',
+      chipFusionSide: (name) => `Fusão: ${name}`, chipRules: (n, total) => `${n} de ${total} regras`,
+      overCheckmate: 'Xeque-mate', overDraw: 'Empate', overStalemateSub: 'Afogamento: nenhuma jogada legal.',
+      overViewBoard: 'Ver tabuleiro', overPlayAgain: 'Jogar novamente',
+      wonGame: (s) => `${s} venceram a partida.`, youWonGame: 'Você venceu a partida.',
+      aiWonGame: (lvl) => `A ${lvl} venceu a partida.`,
+      drawStalemateTitle: 'Empate por afogamento', drawStalemateDesc: 'Quem deveria jogar não tem jogadas legais.',
+      drawRepetitionTitle: 'Empate por repetição', drawRepetitionDesc: 'A mesma posição ocorreu três vezes.',
+      drawFiftyTitle: 'Empate pela regra dos 50 lances', drawFiftyDesc: '50 jogadas se passaram para cada lado sem captura, fusão ou movimento de peão.',
+      matchReview: 'Revisão da partida', goToResult: 'Ir ao resultado', backToCurrent: 'Voltar ao atual',
+      reviewStatus: (i, n) => `Jogada ${i} de ${n}`,
+      sideWins: (s) => `${s} vencem`,
+      checkmateBothAi: 'Xeque-mate. Comece uma nova partida.', checkmateUndo: 'Xeque-mate. Use Desfazer ou comece uma nova partida.',
+      turnTitle: (s) => `Vez das ${s}`,
+      aiKingInCheck: 'O rei da IA está em xeque.', yourKingInCheck: 'Seu rei está em xeque.',
+      aiThinking: 'A IA está pensando…', choosePromo: 'Escolha a peça da promoção.',
+      legendClassic: 'Ponto: mover. Anel vermelho: capturar. Xadrez clássico: sem fusão.',
+      legendBlocked: 'Ponto: mover. Anel vermelho: capturar. Fusão bloqueada nesta jogada.',
+      legendFusion: 'Ponto: mover. Anel vermelho: capturar. Anel violeta: fundir.',
+      noLegalMoves: 'Esta peça não tem jogadas legais agora.',
+      justFused: (s) => `${s} se fundiram na jogada anterior: agora só podem mover ou capturar.`,
+      tapPiece: 'Toque em uma peça para ver seus movimentos.',
+      inCheck: 'em xeque', thinking: 'pensando…', playingNoFusion: 'jogando · sem fusão', playing: 'jogando',
+      classic: 'Clássico', fusion: 'Fusão', capturedPieces: 'Peças capturadas',
+      fusedWith: ' fundida com ', empty: 'vazia',
+      versusFusionNote: (classicN, fusionN) => `<strong>Clássico vs Fusão</strong>: ${classicN} joga xadrez normal, sem fusões. ${fusionN} pode mover uma peça sobre outra sua para fundi-las.`,
+      fusionNote: '<strong>Torre + Cavalo</strong> se move como uma única unidade: em linhas retas e em L. Mova uma peça sobre outra sua para fundi-las.',
+      cooldownNote: ' Depois de uma fusão, a próxima jogada não pode ser outra fusão.',
+      exportHeader: 'XADREZ FUSÃO: histórico da partida', exportGame: (v) => `Partida: ${v}`,
+      twoPlayersLabel: 'Brancas vs Pretas (dois jogadores)',
+      exportModeVersus: (c, f) => `Modo: Clássico vs Fusão (${c} joga clássico, ${f} joga Fusão)`,
+      exportRules: (mode, activeText) => `Regras: ${mode} (${activeText})`,
+      exportActiveList: (list) => `ativas: ${list}`, exportNoRules: 'nenhuma regra opcional ativa',
+      exportStatus: (s) => `Status: ${s}`, exportInProgress: 'em andamento',
+      exportCheckmateWon: (s) => `xeque-mate, ${s} venceram`,
+      exportDrawStalemate: 'empate por afogamento', exportDrawRepetition: 'empate por repetição',
+      exportDrawFifty: 'empate pela regra dos 50 lances', exportDraw: 'empate',
+      exportMovesHeader: 'JOGADAS', exportFusionsHeader: 'FUSÕES',
+      exportNoFusions: 'Nenhuma fusão até agora.', exportNone: 'nenhuma',
+      exportFusedUnit: (name) => `${name} (unidade fundida)`,
+      exportFusionLine: (p1, from, p2, to, into) => `FUSÃO: ${p1} ${from} se fundiu com ${p2} ${to} → unidade ${into} + ${p1} em ${to}`,
+      exportCapture: (who, from, to, taken) => `${who} ${from} × ${to} (capturou ${taken})`,
+      exportMove: (who, from, to) => `${who} ${from} → ${to}`,
+      exportUnitCaptured: (name) => `unidade ${name}`,
+      exportPromotion: (piece) => ` | Promoção: Peão → ${piece}`,
+      exportUnitNow: (name) => ` (unidade agora: ${name})`,
+      exportCheckmateSuffix: ' | xeque-mate', exportCheckSuffix: ' | xeque',
+      exportFusionAt: (into, p1, to, n) => `${into} + ${p1} em ${to} (jogada ${n})`
+    }
+  }
+};
+let LANG = 'en';
+try { LANG = localStorage.getItem('fusionChessLang') || 'en'; } catch (e) { /* ambiente sem localStorage */ }
+const t = (key) => key.split('.').reduce((o, k) => (o == null ? o : o[k]), I18N[LANG]);
+const NAMES_MAP = () => t('pieces');
+const SIDE_NAME_MAP = () => t('sides');
 
 /* Regras opcionais da fusão. As regras estruturais (Rei não funde, no máximo duas peças
    por casa, unidade fundida não funde de novo) valem sempre e não aparecem aqui. */
 const RULE_DEFS = [
-  { key: 'noKnightQueen', title: 'Knight + Queen', short: 'Knight and Queen cannot fuse.' },
-  { key: 'noRookBishop',  title: 'Rook + Bishop',   short: 'Rook and Bishop cannot fuse.' },
-  { key: 'cooldown',      title: 'Fusion cooldown', short: 'After fusing, the next move cannot be a fusion.' },
-  { key: 'promoDiff',     title: 'Different promotion', short: 'A fused pawn can only become a piece different from its partner.' }
+  { key: 'noKnightQueen' },
+  { key: 'noRookBishop'  },
+  { key: 'cooldown'      },
+  { key: 'promoDiff'     }
 ];
-const MODE_LABEL = { balanced: 'Balanced', chaos: 'Chaos', custom: 'Custom' };
 const allRules = (on) => Object.fromEntries(RULE_DEFS.map((d) => [d.key, on]));
 /* Regras efetivas de uma configuração: Balanceado = todas, Caos = nenhuma, Personalizado = escolha do jogador */
 const rulesFor = (s) => (s.mode === 'balanced' ? allRules(true) : s.mode === 'chaos' ? allRules(false) : { ...allRules(false), ...s.custom });
@@ -646,8 +908,7 @@ function halfmoveClock() {
 }
 
 function pieceLabel(p) {
-  const col = p.color === 'white' ? 'White' : 'Black';
-  return `${col} ${NAMES[p.type]}`;
+  return `${t('sides')[p.color]} ${t('pieces')[p.type]}`;
 }
 
 /* ==========================================================
@@ -757,7 +1018,8 @@ function playSound(name) {
 function toggleSound() {
   soundEnabled = !soundEnabled;
   const btn = $('btn-sound');
-  btn.innerHTML = `Sound<span class="snd"> ${soundEnabled ? 'on' : 'off'}</span>`;
+  const ui = t('ui');
+  btn.innerHTML = `${ui.sound}<span class="snd"> ${soundEnabled ? ui.soundOn : ui.soundOff}</span>`;
   btn.setAttribute('aria-pressed', String(soundEnabled));
 }
 
@@ -786,10 +1048,11 @@ let pending = { ...setup, custom: { ...setup.custom } };
 
 const isAiTurn = () => !!G.ai && !!G.ai[G.turn] && !G.over;
 const bothAiControlled = () => !!G.ai && !!G.ai.white && !!G.ai.black;
-function aiLabelFor(color) { return G.ai && G.ai[color] ? AI_LEVELS[G.ai[color]].label : null; }
+function aiLabelFor(color) { return G.ai && G.ai[color] ? t('aiLevel')[G.ai[color]] : null; }
 function sideDisplayName(color) {
   const lbl = aiLabelFor(color);
-  return lbl ? `${SIDE_NAME[color]} (${lbl})` : `${SIDE_NAME[color]} (you)`;
+  const name = t('sides')[color];
+  return t('ui').roleSuffix ? `${name}${t('ui').roleSuffix(lbl || t('you'))}` : name;
 }
 
 function snapshot() {
@@ -1175,25 +1438,25 @@ function completeTurn() {
     G.over = true; G.result = { winner };
     lastEntry.check = '#';
     playSound('win');
-    const desc = !G.ai ? `${SIDE_NAME[winner]} won the game.`
-      : !G.ai[winner] ? 'You won the game.'
-      : bothAiControlled() ? `${sideDisplayName(winner)} won the game.`
-      : `The ${AI_LEVELS[G.ai[winner]].label} won the game.`;
-    showGameOver(winner, 'Checkmate', desc);
+    const desc = !G.ai ? t('ui').wonGame(t('sides')[winner])
+      : !G.ai[winner] ? t('ui').youWonGame
+      : bothAiControlled() ? t('ui').wonGame(sideDisplayName(winner))
+      : t('ui').aiWonGame(t('aiLevel')[G.ai[winner]]);
+    showGameOver(winner, t('ui').overCheckmate, desc);
   } else if (!inCheck && !canMove) {
     G.over = true; G.result = { winner: null, reason: 'stalemate' };
-    showGameOver(null, 'Draw by stalemate', 'The player to move has no legal moves.');
+    showGameOver(null, t('ui').drawStalemateTitle, t('ui').drawStalemateDesc);
   } else if (countRepetitions() >= 3) {
     // Corta loops infinitos de xeque/perseguição: mesma posição pela 3ª vez encerra a partida
     G.over = true; G.result = { winner: null, reason: 'repetition' };
     if (inCheck) lastEntry.check = '+';
     playSound('win');
-    showGameOver(null, 'Draw by repetition', 'The same position has occurred three times.');
+    showGameOver(null, t('ui').drawRepetitionTitle, t('ui').drawRepetitionDesc);
   } else if (halfmoveClock() >= 100) {
     G.over = true; G.result = { winner: null, reason: 'fifty-move' };
     if (inCheck) lastEntry.check = '+';
     playSound('win');
-    showGameOver(null, 'Draw by the 50-move rule', '50 moves have passed for each side with no capture, fusion, or pawn move.');
+    showGameOver(null, t('ui').drawFiftyTitle, t('ui').drawFiftyDesc);
   } else if (inCheck) {
     lastEntry.check = '+';
     playSound('check');
@@ -1222,7 +1485,7 @@ function render() {
   $('btn-ai-pause').hidden = !bothAi;
   $('btn-ai-step').hidden = !bothAi;
   if (bothAi) {
-    $('btn-ai-pause').textContent = G.aiPaused ? 'Resume' : 'Pause';
+    $('btn-ai-pause').textContent = G.aiPaused ? t('ui').resumeAi : t('ui').pause;
     $('btn-ai-pause').disabled = G.over;
     $('btn-ai-step').disabled = G.over || !!G.promo || !G.aiPaused;
   }
@@ -1236,8 +1499,8 @@ function render() {
     $('review-play-icon').innerHTML = G.autoplay
       ? '<rect x="4" y="3" width="3" height="10"/><rect x="9" y="3" width="3" height="10"/>'
       : '<path d="M5 3 L13 8 L5 13 Z"/>';
-    $('btn-review-play').title = G.autoplay ? 'Pause' : 'Play';
-    $('review-pos').textContent = `Move ${G.viewIndex} / ${G.frames.length - 1}`;
+    $('btn-review-play').title = G.autoplay ? t('ui').reviewPauseTitle : t('ui').reviewPlay;
+    $('review-pos').textContent = t('ui').movePos(G.viewIndex, G.frames.length - 1);
   }
 }
 
@@ -1259,12 +1522,12 @@ function renderMode() {
   const versus = G.gameMode === 'versus';
   chip.dataset.mode = versus ? 'versus' : G.mode;
   chip.innerHTML = versus
-    ? `Classic vs Fusion<small>Fusion: ${SIDE_NAME[other(G.classicSide)]}</small>`
-    : `${MODE_LABEL[G.mode]}<small>${activeRuleCount()} of ${RULE_DEFS.length} rules</small>`;
+    ? `${t('ui').gameModeVersus}<small>${t('ui').chipFusionSide(t('sides')[other(G.classicSide)])}</small>`
+    : `${t('modeLabel')[G.mode]}<small>${t('ui').chipRules(activeRuleCount(), RULE_DEFS.length)}</small>`;
   $('fusion-note-text').innerHTML = (versus
-    ? `<strong>Classic vs Fusion</strong>: ${SIDE_NAME[G.classicSide]} plays regular chess, with no fusions. ${SIDE_NAME[other(G.classicSide)]} can move a piece onto another of their own to fuse them.`
-    : '<strong>Rook + Knight</strong> move as a single unit: in straight lines and in an L. Move a piece onto another of yours to fuse them.')
-    + (G.rules.cooldown ? ' After a fusion, the next move cannot be a fusion.' : '');
+    ? t('ui').versusFusionNote(t('sides')[G.classicSide], t('sides')[other(G.classicSide)])
+    : t('ui').fusionNote)
+    + (G.rules.cooldown ? t('ui').cooldownNote : '');
 }
 
 function renderBoard(focusKey) {
@@ -1293,7 +1556,7 @@ function renderBoard(focusKey) {
       sq.type = 'button';
       sq.className = `sq ${dark ? 'd' : 'l'}`;
       sq.dataset.r = r; sq.dataset.c = c;
-      sq.setAttribute('aria-label', `${sqName(r, c)}${cell.length ? ', ' + cell.map(pieceLabel).join(' fused with ') : ', empty'}`);
+      sq.setAttribute('aria-label', `${sqName(r, c)}${cell.length ? ', ' + cell.map(pieceLabel).join(t('ui').fusedWith) : ', ' + t('ui').empty}`);
 
       if (lastMove && ((lastMove.from.r === r && lastMove.from.c === c) || (lastMove.to.r === r && lastMove.to.c === c))) sq.classList.add('last');
       if (selected && selected.r === r && selected.c === c) sq.classList.add('sel');
@@ -1346,59 +1609,61 @@ function fillTag(el, color) {
   const captured = reviewing ? frame.captured : G.captured;
   const caps = [...captured[color]].sort((a, b) => VALUE[b.type] - VALUE[a.type]);
   const isAi = !!G.ai && !!G.ai[color];
-  const role = !G.ai ? '' : (isAi ? AI_LEVELS[G.ai[color]].label : 'You');
+  const role = !G.ai ? '' : (isAi ? t('aiLevel')[G.ai[color]] : t('you'));
   const noFusion = active && !G.promo && mergeBlocked(color);
   const kind = G.classicSide ? (color === G.classicSide ? 'classic' : 'fusion') : '';
-  const state = reviewing ? '' : (checked ? 'in check' : (active ? (isAi && G.thinking ? 'thinking…' : (noFusion ? 'playing · no fusion' : 'playing')) : ''));
+  const ui = t('ui');
+  const state = reviewing ? '' : (checked ? ui.inCheck : (active ? (isAi && G.thinking ? ui.thinking : (noFusion ? ui.playingNoFusion : ui.playing)) : ''));
   el.innerHTML = `
     <span class="dot ${color === 'white' ? 'w' : 'b'}"></span>
-    <span class="name">${SIDE_NAME[color]}</span>
+    <span class="name">${t('sides')[color]}</span>
     ${role ? `<span class="role">${role}</span>` : ''}
-    ${kind ? `<span class="role ${kind}">${kind === 'classic' ? 'Classic' : 'Fusion'}</span>` : ''}
+    ${kind ? `<span class="role ${kind}">${kind === 'classic' ? ui.classic : ui.fusion}</span>` : ''}
     <span class="state${checked ? ' alert' : ''}">${state}</span>
-    <span class="tray${caps.length ? ' has' : ''}" title="Captured pieces">${caps.map((p) => pieceSVG(p.type, p.color)).join('')}</span>`;
+    <span class="tray${caps.length ? ' has' : ''}" title="${ui.capturedPieces}">${caps.map((p) => pieceSVG(p.type, p.color)).join('')}</span>`;
 }
 
 function renderStatus() {
   const title = $('status-title'), sub = $('status-sub');
   sub.classList.remove('alert');
 
+  const ui = t('ui');
   if (isReviewing()) {
-    title.textContent = 'Match review';
-    sub.innerHTML = `Move ${G.viewIndex} of ${G.frames.length - 1} <button type="button" class="btn mini" onclick="reviewJumpLive()">${G.over ? 'Go to result' : 'Back to current'}</button>`;
+    title.textContent = ui.matchReview;
+    sub.innerHTML = `${ui.reviewStatus(G.viewIndex, G.frames.length - 1)} <button type="button" class="btn mini" onclick="reviewJumpLive()">${G.over ? ui.goToResult : ui.backToCurrent}</button>`;
     return;
   }
 
   if (G.over) {
     if (G.result.winner) {
-      title.textContent = `${SIDE_NAME[G.result.winner]} wins`;
-      sub.textContent = bothAiControlled() ? 'Checkmate. Start a new game.' : 'Checkmate. Use Undo or start a new game.';
+      title.textContent = ui.sideWins(t('sides')[G.result.winner]);
+      sub.textContent = bothAiControlled() ? ui.checkmateBothAi : ui.checkmateUndo;
     } else {
-      title.textContent = 'Draw';
-      sub.textContent = 'Stalemate: no legal moves.';
+      title.textContent = ui.overDraw;
+      sub.textContent = ui.overStalemateSub;
     }
     return;
   }
-  title.textContent = `${SIDE_NAME[G.turn]}'s turn`;
+  title.textContent = ui.turnTitle(t('sides')[G.turn]);
   if (isKingInCheck(G.board, G.turn)) {
-    sub.textContent = isAiTurn() ? "The AI's king is in check." : 'Your king is in check.';
+    sub.textContent = isAiTurn() ? ui.aiKingInCheck : ui.yourKingInCheck;
     sub.classList.add('alert');
   } else if (G.thinking) {
-    sub.textContent = 'The AI is thinking…';
+    sub.textContent = ui.aiThinking;
   } else if (G.promo) {
-    sub.textContent = 'Choose the promotion piece.';
+    sub.textContent = ui.choosePromo;
   } else if (G.selected) {
     sub.textContent = G.legal.length
       ? (!canFuse(G.turn)
-        ? 'Dot: move. Red ring: capture. Classic chess: no fusion.'
+        ? ui.legendClassic
         : mergeBlocked(G.turn)
-        ? 'Dot: move. Red ring: capture. Fusion blocked this turn.'
-        : 'Dot: move. Red ring: capture. Violet ring: fuse.')
-      : 'This piece has no legal moves right now.';
+        ? ui.legendBlocked
+        : ui.legendFusion)
+      : ui.noLegalMoves;
   } else if (mergeBlocked(G.turn)) {
-    sub.textContent = `${SIDE_NAME[G.turn]} fused on the previous move: now they can only move or capture.`;
+    sub.textContent = ui.justFused(t('sides')[G.turn]);
   } else {
-    sub.textContent = 'Tap a piece to see its moves.';
+    sub.textContent = ui.tapPiece;
   }
 }
 
@@ -1407,12 +1672,12 @@ function renderHistory() {
   $('move-count').textContent = G.history.length;
   $('btn-copy').disabled = !G.history.length;
   if (!G.history.length) {
-    list.innerHTML = `<li class="empty">Moves will appear here.</li>`;
+    list.innerHTML = `<li class="empty">${t('ui').movesEmpty}</li>`;
     return;
   }
   const cell = (h, isNew) => {
     if (!h) return '<span class="mv"></span>';
-    const sym = h.kind === 'merge' ? '<svg class="link" viewBox="0 0 16 10" aria-label="fused with"><circle cx="5.5" cy="5" r="3.6"/><circle cx="10.5" cy="5" r="3.6"/></svg>' : h.kind === 'capture' ? '<span class="sym cap">×</span>' : '<span class="sym">→</span>';
+    const sym = h.kind === 'merge' ? `<svg class="link" viewBox="0 0 16 10" aria-label="${t('ui').fusedWith.trim()}"><circle cx="5.5" cy="5" r="3.6"/><circle cx="10.5" cy="5" r="3.6"/></svg>` : h.kind === 'capture' ? '<span class="sym cap">×</span>' : '<span class="sym">→</span>';
     const extra = h.kind === 'merge' ? chipHTML([h.into], h.color) : h.kind === 'capture' ? chipHTML(h.taken, other(h.color)) : '';
     const promo = h.promo ? `<span class="sym fuse">=</span>${chipHTML([h.promo], h.color)}` : '';
     return `<span class="mv${isNew ? ' new' : ''}">${chipHTML(h.pieces, h.color)}<span>${h.from}</span>${sym}<span>${h.to}</span>${extra}${promo}${h.check ? `<span class="sym cap">${h.check}</span>` : ''}</span>`;
@@ -1429,53 +1694,55 @@ function renderHistory() {
 /* ==========================================================
    7b. Copiar histórico (texto)
    ========================================================== */
-const unitName = (types) => types.map((t) => NAMES[t]).join(' + ');
+const unitName = (types) => types.map((k) => t('pieces')[k]).join(' + ');
 
 /* Descreve uma jogada em texto: qual peça (ou unidade fundida) andou, o que foi fundido ou capturado */
 function describeMove(h) {
+  const P = t('pieces'), ui = t('ui');
   const isUnit = h.pieces.length > 1;
-  const who = isUnit ? `${unitName(h.pieces)} (fused unit)` : NAMES[h.pieces[0]];
+  const who = isUnit ? ui.exportFusedUnit(unitName(h.pieces)) : P[h.pieces[0]];
   let s;
 
   if (h.kind === 'merge') {
-    s = `FUSION: ${NAMES[h.pieces[0]]} ${h.from} fused with ${NAMES[h.into]} ${h.to} → unit ${NAMES[h.into]} + ${NAMES[h.pieces[0]]} at ${h.to}`;
+    s = ui.exportFusionLine(P[h.pieces[0]], h.from, P[h.into], h.to, P[h.into]);
   } else if (h.kind === 'capture') {
-    s = `${who} ${h.from} × ${h.to} (captured ${h.taken.length > 1 ? `unit ${unitName(h.taken)}` : NAMES[h.taken[0]]})`;
+    s = ui.exportCapture(who, h.from, h.to, h.taken.length > 1 ? ui.exportUnitCaptured(unitName(h.taken)) : P[h.taken[0]]);
   } else {
-    s = `${who} ${h.from} → ${h.to}`;
+    s = ui.exportMove(who, h.from, h.to);
   }
 
   if (h.promo) {
     let done = false;
-    const after = h.pieces.map((t) => (!done && t === 'pawn' ? (done = true, h.promo) : t));
-    s += ` | Promotion: Pawn → ${NAMES[h.promo]}${after.length > 1 ? ` (unit now: ${unitName(after)})` : ''}`;
+    const after = h.pieces.map((k) => (!done && k === 'pawn' ? (done = true, h.promo) : k));
+    s += ui.exportPromotion(P[h.promo]) + (after.length > 1 ? ui.exportUnitNow(unitName(after)) : '');
   }
-  if (h.check === '#') s += ' | checkmate';
-  else if (h.check === '+') s += ' | check';
+  if (h.check === '#') s += ui.exportCheckmateSuffix;
+  else if (h.check === '+') s += ui.exportCheckSuffix;
   return s;
 }
 
 function historyText() {
+  const ui = t('ui'), S = t('sides');
   const lines = [];
-  const you = G.ai ? `${sideDisplayName('white')} vs ${sideDisplayName('black')}` : 'White vs Black (two players)';
-  const drawLabel = { stalemate: 'draw by stalemate', repetition: 'draw by repetition', 'fifty-move': 'draw by the 50-move rule' };
-  const status = !G.over ? 'in progress'
-    : G.result.winner ? `checkmate, ${SIDE_NAME[G.result.winner]} won` : (drawLabel[G.result.reason] || 'draw');
+  const you = G.ai ? `${sideDisplayName('white')} vs ${sideDisplayName('black')}` : ui.twoPlayersLabel;
+  const drawLabel = { stalemate: ui.exportDrawStalemate, repetition: ui.exportDrawRepetition, 'fifty-move': ui.exportDrawFifty };
+  const status = !G.over ? ui.exportInProgress
+    : G.result.winner ? ui.exportCheckmateWon(S[G.result.winner]) : (drawLabel[G.result.reason] || ui.exportDraw);
 
-  lines.push('FUSION CHESS: game history');
-  lines.push(`Game: ${you}`);
-  if (G.gameMode === 'versus') lines.push(`Mode: Classic vs Fusion (${SIDE_NAME[G.classicSide]} plays classic, ${SIDE_NAME[other(G.classicSide)]} plays Fusion)`);
-  const active = RULE_DEFS.filter((d) => G.rules[d.key]).map((d) => d.title);
-  lines.push(`Rules: ${MODE_LABEL[G.mode]} (${active.length ? `active: ${active.join(', ')}` : 'no optional rules active'})`);
-  lines.push(`Status: ${status}`);
+  lines.push(ui.exportHeader);
+  lines.push(ui.exportGame(you));
+  if (G.gameMode === 'versus') lines.push(ui.exportModeVersus(S[G.classicSide], S[other(G.classicSide)]));
+  const active = RULE_DEFS.filter((d) => G.rules[d.key]).map((d) => t('rules')[d.key].title);
+  lines.push(ui.exportRules(t('modeLabel')[G.mode], active.length ? ui.exportActiveList(active.join(', ')) : ui.exportNoRules));
+  lines.push(ui.exportStatus(status));
   lines.push('');
-  lines.push('MOVES');
+  lines.push(ui.exportMovesHeader);
 
   for (let i = 0; i < G.history.length; i += 2) {
     const n = i / 2 + 1;
     const a = G.history[i], b = G.history[i + 1];
-    lines.push(`${n}. ${SIDE_NAME[a.color]}: ${describeMove(a)}`);
-    if (b) lines.push(`${' '.repeat(String(n).length + 2)}${SIDE_NAME[b.color]}: ${describeMove(b)}`);
+    lines.push(`${n}. ${S[a.color]}: ${describeMove(a)}`);
+    if (b) lines.push(`${' '.repeat(String(n).length + 2)}${S[b.color]}: ${describeMove(b)}`);
   }
 
   // Resumo das fusões de cada lado
@@ -1483,15 +1750,16 @@ function historyText() {
     .map((h, i) => ({ h, n: Math.floor(i / 2) + 1 }))
     .filter(({ h }) => h.kind === 'merge');
   lines.push('');
-  lines.push('FUSIONS');
+  lines.push(ui.exportFusionsHeader);
   if (!merges.length) {
-    lines.push('No fusions so far.');
+    lines.push(ui.exportNoFusions);
   } else {
+    const P = t('pieces');
     ['white', 'black'].forEach((color) => {
       const mine = merges.filter(({ h }) => h.color === color);
-      lines.push(`${SIDE_NAME[color]}: ${mine.length
-        ? mine.map(({ h, n }) => `${NAMES[h.into]} + ${NAMES[h.pieces[0]]} at ${h.to} (move ${n})`).join('; ')
-        : 'none'}`);
+      lines.push(`${S[color]}: ${mine.length
+        ? mine.map(({ h, n }) => ui.exportFusionAt(P[h.into], P[h.pieces[0]], h.to, n)).join('; ')
+        : ui.exportNone}`);
     });
   }
   return lines.join('\n');
@@ -1519,14 +1787,14 @@ async function copyHistory() {
   if (!G.history.length) return;
   const ok = await writeClipboard(historyText());
   const btn = $('btn-copy'), label = $('copy-label');
-  const msg = ok ? 'Copied!' : 'Could not copy';
+  const msg = ok ? t('ui').copied : t('ui').copyFailed;
   label.textContent = msg;
-  $('copy-status').textContent = ok ? 'History copied to the clipboard.' : msg;
+  $('copy-status').textContent = ok ? t('ui').copiedStatus : msg;
   btn.classList.toggle('done', ok);
   btn.classList.toggle('fail', !ok);
   clearTimeout(copyTimer);
   copyTimer = setTimeout(() => {
-    label.textContent = 'Copy';
+    label.textContent = t('ui').copy;
     $('copy-status').textContent = '';
     btn.classList.remove('done', 'fail');
   }, 1800);
@@ -1561,18 +1829,18 @@ function openPromotion() {
   grid.innerHTML = '';
 
   $('promo-lead').textContent = partner && G.rules.promoDiff
-    ? `The pawn is fused with ${NAMES[partner.type]}: it must become a different piece.`
-    : 'Choose the new piece. The other half of the unit stays the same.';
+    ? t('ui').promoLeadFused(t('pieces')[partner.type])
+    : t('ui').promoLeadDefault;
 
   PROMO_TYPES.forEach((type) => {
     const block = promoBlock(partner && partner.type, type);
-    const note = block === 'same' ? `Already the fused piece`
-      : block === 'ban' ? `Can't fuse with ${NAMES[partner.type]}` : '';
+    const note = block === 'same' ? t('ui').promoAlready
+      : block === 'ban' ? t('ui').promoCantFuse(t('pieces')[partner.type]) : '';
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'promo-btn';
     btn.disabled = !!block;
-    btn.innerHTML = `<span class="box">${pieceSVG(type, G.turn)}</span><span>${NAMES[type]}</span>${note ? `<small>${note}</small>` : ''}`;
+    btn.innerHTML = `<span class="box">${pieceSVG(type, G.turn)}</span><span>${t('pieces')[type]}</span>${note ? `<small>${note}</small>` : ''}`;
     btn.onclick = () => finishPromotion(type);
     grid.appendChild(btn);
   });
@@ -1617,9 +1885,9 @@ document.querySelectorAll('.overlay').forEach((o) => o.addEventListener('mousedo
 const AI_LEVELS = {
   // depth: lances à frente | quiesce: termina trocas de captura | noise: erro na nota (centipeões)
   // blunder: chance de jogar um lance qualquer | timeMs: tempo máximo de busca
-  easy:   { label: 'Easy AI', depth: 2, quiesce: false, noise: 70, blunder: 0.08, timeMs: 1500 },
-  medium: { label: 'Medium AI', depth: 3, quiesce: true,  noise: 0,  blunder: 0,    timeMs: 2500 },
-  hard:   { label: 'Strong AI', depth: 4, quiesce: true,  noise: 0,  blunder: 0,    timeMs: 3500 }
+  easy:   { depth: 2, quiesce: false, noise: 70, blunder: 0.08, timeMs: 1500 },
+  medium: { depth: 3, quiesce: true,  noise: 0,  blunder: 0,    timeMs: 2500 },
+  hard:   { depth: 4, quiesce: true,  noise: 0,  blunder: 0,    timeMs: 3500 }
 };
 const SPEED_DELAY = { slow: 1400, normal: 450, fast: 120 };
 const MATE = 100000;
@@ -1885,25 +2153,6 @@ function maybeAiMove(force) {
 }
 
 /* ---------- Tela "Nova partida" ---------- */
-const OPP_HINT = {
-  human: 'Two players on the same device, each on their own turn.',
-  easy: 'Sees the opponent\'s reply and avoids losing pieces for free, but doesn\'t plan ahead and makes mistakes. Good for learning fusion.',
-  medium: 'Calculates three moves ahead (four in endgames), trades pieces wisely and fuses when it pays off. Takes up to 2 seconds per move.',
-  hard: 'Calculates four moves ahead (five in endgames) and plays very precisely. May take up to 3.5 seconds per move.',
-  ai_vs_ai: 'The two AIs play each other on their own. Choose each side\'s difficulty and the speed below — you can pause and step through move by move whenever you like.'
-};
-
-const GM_HINT = {
-  fusion: 'Fusion Chess as usual: both sides can fuse pieces.',
-  versus: 'One side plays classic chess with the normal rules. The other plays Fusion Chess in Balanced mode. Works against a person, against the AI, or AI vs AI.'
-};
-
-const MODE_HINT = {
-  balanced: 'All rules on. More strategic fusions and evenly matched games.',
-  chaos: 'No rules on: any piece except the King fuses with any other, with no cooldown and no limits on promotion.',
-  custom: 'Choose below which rules are active in this game.'
-};
-
 function openSetup() { pending = { ...setup, custom: { ...setup.custom } }; paintSetup(); openModal('modal-setup'); }
 function pickSetup(key, value) {
   // Ao abrir o Personalizado pela primeira vez, parte das regras que o preset atual mostra
@@ -1918,31 +2167,53 @@ function toggleRule(key) {
   paintSetup();
 }
 function paintSetup() {
+  const ui = t('ui'), S = t('sides'), D = t('diff'), ML = t('modeLabel');
   const versus = pending.gameMode === 'versus';
-  const roleOf = (color) => (color === pending.fusionSide ? 'Fusion' : 'Classic');
-  document.querySelectorAll('#seg-gamemode button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.gameMode)));
-  document.querySelectorAll('#seg-fusionside button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.fusionSide)));
+  const roleOf = (color) => (color === pending.fusionSide ? ui.fusion : ui.classic);
+  document.querySelectorAll('#seg-gamemode button').forEach((b) => {
+    b.textContent = b.dataset.v === 'fusion' ? ui.gameModeFusion : ui.gameModeVersus;
+    b.setAttribute('aria-checked', String(b.dataset.v === pending.gameMode));
+  });
+  document.querySelectorAll('#seg-fusionside button').forEach((b) => {
+    b.textContent = S[b.dataset.v];
+    b.setAttribute('aria-checked', String(b.dataset.v === pending.fusionSide));
+  });
   $('field-fusionside').hidden = !versus;
   $('field-mode').hidden = versus;                       // no Clássico vs Fusion o modo é sempre Balanceado
-  $('gm-hint').textContent = GM_HINT[pending.gameMode];
-  document.querySelectorAll('#seg-side button').forEach((b) => { b.textContent = `${SIDE_NAME[b.dataset.v]}${versus ? ` · ${roleOf(b.dataset.v)}` : ''}`; });
-  $('lbl-ai-white').textContent = `White's difficulty${versus ? ` (${roleOf('white')})` : ''}`;
-  $('lbl-ai-black').textContent = `Black's difficulty${versus ? ` (${roleOf('black')})` : ''}`;
-  document.querySelectorAll('#seg-opponent button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.opponent)));
+  $('gm-hint').textContent = t('gmHint')[pending.gameMode];
+  document.querySelectorAll('#seg-side button').forEach((b) => { b.textContent = `${S[b.dataset.v]}${versus ? ` · ${roleOf(b.dataset.v)}` : ''}`; });
+  $('lbl-ai-white').textContent = `${ui.lblAiWhite}${versus ? ui.roleSuffix(roleOf('white')) : ''}`;
+  $('lbl-ai-black').textContent = `${ui.lblAiBlack}${versus ? ui.roleSuffix(roleOf('black')) : ''}`;
+  document.querySelectorAll('#seg-opponent button').forEach((b) => {
+    b.textContent = { human: ui.oppHuman, easy: ui.oppEasy, medium: ui.oppMedium, hard: ui.oppHard, ai_vs_ai: ui.oppAivai }[b.dataset.v];
+    b.setAttribute('aria-checked', String(b.dataset.v === pending.opponent));
+  });
   document.querySelectorAll('#seg-side button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.side)));
-  document.querySelectorAll('#seg-mode button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.mode)));
-  document.querySelectorAll('#seg-ai-white button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.aiWhite)));
-  document.querySelectorAll('#seg-ai-black button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.aiBlack)));
-  document.querySelectorAll('#seg-ai-speed button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.aiSpeed)));
+  document.querySelectorAll('#seg-mode button').forEach((b) => {
+    b.textContent = ML[b.dataset.v];
+    b.setAttribute('aria-checked', String(b.dataset.v === pending.mode));
+  });
+  document.querySelectorAll('#seg-ai-white button').forEach((b) => {
+    b.textContent = D[b.dataset.v];
+    b.setAttribute('aria-checked', String(b.dataset.v === pending.aiWhite));
+  });
+  document.querySelectorAll('#seg-ai-black button').forEach((b) => {
+    b.textContent = D[b.dataset.v];
+    b.setAttribute('aria-checked', String(b.dataset.v === pending.aiBlack));
+  });
+  document.querySelectorAll('#seg-ai-speed button').forEach((b) => {
+    b.textContent = { slow: ui.speedSlow, normal: ui.speedNormal, fast: ui.speedFast }[b.dataset.v];
+    b.setAttribute('aria-checked', String(b.dataset.v === pending.aiSpeed));
+  });
   $('field-side').hidden = pending.opponent === 'human' || pending.opponent === 'ai_vs_ai';
   $('field-aivai').hidden = pending.opponent !== 'ai_vs_ai';
-  $('opp-hint').textContent = OPP_HINT[pending.opponent];
-  $('mode-hint').textContent = MODE_HINT[pending.mode];
+  $('opp-hint').textContent = t('oppHint')[pending.opponent];
+  $('mode-hint').textContent = t('modeHint')[pending.mode];
 
   const flags = rulesFor(pending), editable = pending.mode === 'custom';
   $('rule-list').innerHTML = RULE_DEFS.map((d) => `
     <button type="button" class="rule-row" role="switch" data-k="${d.key}" aria-checked="${flags[d.key]}"${editable ? '' : ' disabled'} onclick="toggleRule('${d.key}')">
-      <span class="txt"><strong>${d.title}</strong><small>${d.short}</small></span>
+      <span class="txt"><strong>${t('rules')[d.key].title}</strong><small>${t('rules')[d.key].short}</small></span>
       <span class="sw" aria-hidden="true"></span>
     </button>`).join('');
 }
@@ -1952,26 +2223,21 @@ function applySetup() { setup = { ...pending, custom: { ...pending.custom } }; c
 const RULE_ART = {
   noKnightQueen: () => `${pieceSVG('knight', 'white')}<span class="arrow">✕</span>${pieceSVG('queen', 'white')}`,
   noRookBishop: () => `${pieceSVG('rook', 'white')}<span class="arrow">✕</span>${pieceSVG('bishop', 'white')}`,
-  cooldown: () => `<div class="piece" style="inset:0 0 14px">${unitHTML(['bishop', 'knight'], 'white')}</div><span class="badge">1 turn</span>`,
-  promoDiff: () => `<div class="piece" style="inset:0 0 14px">${unitHTML(['pawn', 'rook'], 'white')}</div><span class="badge">≠ Rook</span>`
-};
-const RULE_LONG = {
-  noKnightQueen: 'Knight and Queen never fuse. This also applies to promotion: Pawn + Knight cannot become Queen + Knight.',
-  noRookBishop: 'Rook and Bishop never fuse. This also applies to promotion: Pawn + Rook cannot become Bishop + Rook.',
-  cooldown: 'After fusing, your next move must be a regular move or a capture. Fused on your 1st move? You can only fuse again on your 3rd.',
-  promoDiff: 'On promotion, the fused pawn must become a piece different from its partner. Rook + Pawn, for example, can never become Rook + Rook.'
+  cooldown: () => `<div class="piece" style="inset:0 0 14px">${unitHTML(['bishop', 'knight'], 'white')}</div><span class="badge">${LANG === 'pt' ? '1 jogada' : '1 turn'}</span>`,
+  promoDiff: () => `<div class="piece" style="inset:0 0 14px">${unitHTML(['pawn', 'rook'], 'white')}</div><span class="badge">≠ ${t('pieces').rook}</span>`
 };
 
 function openRules() {
+  const ui = t('ui');
   $('rules-lead').textContent = G.gameMode === 'versus'
-    ? `One side plays classic chess, with no fusions. The other plays Fusion Chess and can fuse two of its pieces into one. In this game, ${SIDE_NAME[G.classicSide]} plays classic and ${SIDE_NAME[other(G.classicSide)]} plays Fusion.`
-    : 'Chess as usual, with one extra move: fuse two of your pieces into one.';
-  $('rules-head').innerHTML = `Rules for this game: ${MODE_LABEL[G.mode]} <span>(${activeRuleCount()} of ${RULE_DEFS.length} active)</span>`;
+    ? ui.rulesLeadVersus(t('sides')[G.classicSide], t('sides')[other(G.classicSide)])
+    : ui.rulesLeadDefault;
+  $('rules-head').innerHTML = `${LANG === 'pt' ? 'Regras desta partida' : 'Rules for this game'}: ${t('modeLabel')[G.mode]} <span>(${activeRuleCount()} ${LANG === 'pt' ? 'de' : 'of'} ${RULE_DEFS.length} ${LANG === 'pt' ? 'ativas' : 'active'})</span>`;
   $('rules-dynamic').innerHTML = RULE_DEFS.map((d) => {
     const on = !!G.rules[d.key];
     return `<div class="rule${on ? '' : ' off'}">
       <div class="art${d.key.startsWith('no') ? ' row' : ''}">${RULE_ART[d.key]()}</div>
-      <div><h3>${d.title} <span class="pill${on ? ' on' : ''}">${on ? 'Active' : 'Disabled'}</span></h3><p>${RULE_LONG[d.key]}</p></div>
+      <div><h3>${t('rules')[d.key].title} <span class="pill${on ? ' on' : ''}">${on ? ui.active : ui.disabled}</span></h3><p>${t('ruleLong')[d.key]}</p></div>
     </div>`;
   }).join('');
   openModal('modal-rules');
@@ -1989,7 +2255,74 @@ function paintStatic() {
   $('art-promo').innerHTML = `<div class="piece">${unitHTML(['queen', 'bishop'], 'white')}</div>`;
 }
 
-window.addEventListener('DOMContentLoaded', () => { paintStatic(); startGame(); });
+/* ==========================================================
+   11. Aplicação de idioma (EN / PT)
+   ========================================================== */
+function applyStaticText() {
+  const ui = t('ui');
+  document.documentElement.lang = LANG === 'pt' ? 'pt-BR' : 'en';
+  document.querySelectorAll('#lang-switch .lang-opt').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.lang === LANG)));
+
+  $('brand-tagline').textContent = ui.brandTagline;
+  $('btn-undo').textContent = ui.undo;
+  $('btn-back').textContent = ui.back; $('btn-back').title = ui.backTitle;
+  $('btn-resume').textContent = ui.resume;
+  $('btn-ai-pause').textContent = G.aiPaused ? ui.resumeAi : ui.pause;
+  $('btn-ai-step').textContent = ui.nextMove;
+  document.querySelector('.actions button[onclick="flipBoard()"]').textContent = ui.flip;
+  $('btn-sound').innerHTML = `${ui.sound}<span class="snd"> ${soundEnabled ? ui.soundOn : ui.soundOff}</span>`;
+  document.querySelector('.actions button[onclick="openRules()"]').textContent = ui.rules;
+  document.querySelector('.actions button[onclick="openSetup()"]').textContent = ui.newGame;
+
+  document.querySelector('.board-col').setAttribute('aria-label', ui.ariaBoardSection);
+  $('board').setAttribute('aria-label', ui.ariaChessBoard);
+  document.querySelector('aside.side').setAttribute('aria-label', ui.ariaGame);
+  $('mode-chip').title = ui.modeChipTitle;
+  $('btn-review-back').title = ui.reviewPrev;
+  $('btn-review-play').title = G.autoplay ? ui.reviewPauseTitle : ui.reviewPlay;
+  $('btn-review-forward').title = ui.reviewNext;
+  $('section-moves-label').textContent = ui.moves;
+  $('btn-copy').title = ui.copyHistoryTitle;
+  $('copy-label').textContent = ui.copy;
+
+  $('promo-title').textContent = ui.promoTitle;
+  $('rules-title').textContent = ui.rulesTitle;
+  $('rules-lead').textContent = ui.rulesLeadDefault;
+  $('rule-fuse-title').textContent = ui.ruleFuseTitle; $('rule-fuse-desc').textContent = ui.ruleFuseDesc;
+  $('rule-limits-title').textContent = ui.ruleLimitsTitle; $('rule-limits-desc').textContent = ui.ruleLimitsDesc;
+  $('rule-unit-title').textContent = ui.ruleUnitTitle; $('rule-unit-desc').textContent = ui.ruleUnitDesc;
+  $('rule-promo-title').textContent = ui.rulePromoTitle; $('rule-promo-desc').textContent = ui.rulePromoDesc;
+  $('rules-gotit-btn').textContent = ui.gotIt;
+
+  $('setup-title').textContent = ui.setupTitle;
+  $('setup-lead').textContent = ui.setupLead;
+  $('lbl-gm').textContent = ui.lblGm;
+  $('lbl-fside').textContent = ui.lblFside;
+  $('fside-hint').textContent = ui.fsideHint;
+  $('lbl-opp').textContent = ui.lblOpp;
+  $('lbl-side').textContent = ui.lblSide;
+  $('lbl-ai-speed').textContent = ui.lblAiSpeed;
+  $('aispeed-hint').textContent = ui.aiSpeedHint;
+  $('lbl-mode').textContent = ui.lblMode;
+  $('setup-cancel-btn').textContent = ui.cancel;
+  $('setup-start-btn').textContent = ui.start;
+
+  $('over-viewboard-btn').textContent = ui.overViewBoard;
+  $('over-playagain-btn').textContent = ui.overPlayAgain;
+
+  if ($('modal-setup').classList.contains('open')) paintSetup();
+  if ($('modal-rules').classList.contains('open')) openRules();
+}
+
+function setLang(lang) {
+  if (lang !== 'en' && lang !== 'pt') return;
+  LANG = lang;
+  try { localStorage.setItem('fusionChessLang', lang); } catch (e) { /* ignore */ }
+  applyStaticText();
+  render();
+}
+
+window.addEventListener('DOMContentLoaded', () => { applyStaticText(); paintStatic(); startGame(); });
 </script>
 </body>
 </html>
