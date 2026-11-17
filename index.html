@@ -1,0 +1,3091 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fusion Chess</title>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ==========================================================
+   Tokens
+   ========================================================== */
+:root {
+  --bg: #14171b;
+  --panel: #1b1f24;
+  --panel-2: #22272d;
+  --line: #333a42;
+  --text: #e8eaec;
+  --muted: #98a2ab;
+
+  --light: #d5d9dd;      /* casas claras: celadon */
+  --dark: #5d7083;       /* casas escuras: jade */
+  --frame-a: #0b0d0f;
+  --frame-b: #14181c;
+
+  --accent: #4d6dff;
+  --fusion: #4d6dff;
+  --fusion-2: var(--accent);
+  --danger: #e5534f;
+
+  --board: clamp(300px, min(100vw - 24px, 100dvh - 210px), 680px);
+
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+html { scroll-padding-top: env(safe-area-inset-top, 0px); background: var(--bg); }
+
+* { box-sizing: border-box; margin: 0; }
+
+body {
+  min-height: 100%;
+  font-family: 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: var(--text);
+  background-color: var(--bg);
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button { font-family: inherit; color: inherit; }
+
+/* ==========================================================
+   Cabeçalho
+   ========================================================== */
+.top {
+  max-width: 1120px; margin: 0 auto;
+  padding: 14px 12px 6px;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
+}
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand-mark { width: 46px; height: 46px; }
+.brand h1 { font-family: 'Archivo', system-ui, sans-serif; font-weight: 400; font-size: 28px; line-height: 1; letter-spacing: .2px; }
+.brand p { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn {
+  font-weight: 700; font-size: 13px; line-height: 1;
+  min-height: 40px; padding: 0 14px; border-radius: 9px;
+  border: 1px solid var(--line); background: rgba(255, 255, 255, .03);
+  cursor: pointer; transition: background .15s, border-color .15s, transform .1s;
+}
+.btn:hover:not(:disabled) { background: rgba(255, 255, 255, .06); border-color: #55606a; }
+.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn:disabled { opacity: .38; cursor: not-allowed; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #ffffff; }
+.btn.primary:hover:not(:disabled) { background: #6a85ff; border-color: #6a85ff; }
+.btn:focus-visible, .sq:focus-visible, .mode-chip:focus-visible, .rule-row:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* ==========================================================
+   Palco
+   ========================================================== */
+.stage {
+  max-width: 1120px; margin: 0 auto; padding: 8px 12px 28px;
+  display: flex; gap: 32px; justify-content: center; align-items: flex-start;
+}
+.board-col { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+
+/* Jogadores */
+.tag { width: var(--board); min-height: 48px; padding: 6px 4px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.tag .dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #14181c; flex-shrink: 0; transition: box-shadow .2s; }
+.tag .dot.w { background: #fbfaf5; }
+.tag .dot.b { background: #1f2328; }
+.tag .name { font-weight: 700; font-size: 15px; }
+.tag .state { font-size: 12.5px; color: var(--muted); }
+.tag .state.alert { color: var(--danger); font-weight: 800; }
+.tag.active .dot { box-shadow: 0 0 0 4px rgba(77, 109, 255, .35); }
+.tag.active .name { color: var(--text); }
+.tray {
+  margin-left: auto; min-height: 30px; padding: 2px 8px 2px 14px; border-radius: 999px;
+  background: var(--light); display: none; align-items: center; flex-wrap: wrap; justify-content: flex-end;
+}
+.tray.has { display: flex; }
+.tray .pc { width: 26px; height: 26px; margin-left: -8px; filter: none; }
+
+/* Moldura + tabuleiro */
+.frame {
+  width: var(--board); height: var(--board); padding: 10px; border-radius: 14px;
+  background: var(--frame-a);
+}
+.board {
+  width: 100%; height: 100%; display: grid;
+  grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr);
+  border-radius: 4px; overflow: hidden;
+  
+}
+.sq {
+  position: relative; display: block; padding: 0; border: 0; cursor: pointer;
+  background-color: var(--sq);
+}
+.sq.l { --sq: var(--light); --co: var(--dark); }
+.sq.d { --sq: var(--dark); --co: var(--light); }
+.sq::before { content: ''; position: absolute; inset: 0; pointer-events: none; }
+.sq.last::before { background: rgba(77, 109, 255, .22); }
+.sq.sel::before { background: rgba(77, 109, 255, .42); }
+.sq.check::before { background: radial-gradient(circle, rgba(201, 58, 54, .6) 0%, rgba(201, 58, 54, .28) 50%, transparent 76%); }
+
+.co {
+  position: absolute; z-index: 1; pointer-events: none; color: var(--co);
+  font-size: clamp(9px, calc(var(--board) / 50), 13px); font-weight: 800; line-height: 1;
+}
+.co.rank { top: 4px; left: 5px; }
+.co.file { bottom: 4px; right: 5px; }
+
+/* Marcadores de movimento */
+.mk { position: absolute; z-index: 4; pointer-events: none; }
+.mk.move { left: 36%; top: 36%; width: 28%; height: 28%; border-radius: 50%; background: rgba(20, 24, 28, .28); }
+.mk.capture { inset: 5%; border-radius: 50%; border: 4px solid rgba(201, 58, 54, .85); }
+.mk.merge { inset: 6%; border-radius: 50%; border: 3px solid var(--accent); }
+.mk.castle { inset: 14%; border-radius: 50%; border: 3px dashed rgba(20, 24, 28, .55); }
+
+/* Efeitos de jogada */
+.sq.fx-capture::after, .sq.fx-merge::after {
+  content: ''; position: absolute; inset: 0; z-index: 6; pointer-events: none;
+  opacity: 0; animation: flash .4s ease-out;
+}
+.sq.fx-capture::after { background: rgba(201, 58, 54, .5); }
+.sq.fx-merge::after { background: rgba(77, 109, 255, .4); }
+@keyframes flash { from { opacity: 1; } to { opacity: 0; } }
+
+/* ==========================================================
+   Peças
+   ========================================================== */
+.piece { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; pointer-events: none; }
+.piece .pc { width: 92%; height: 92%; filter: none; }
+.piece.slide { z-index: 7; animation: slide .26s cubic-bezier(.22, .8, .25, 1); }
+@keyframes slide { from { transform: translate(var(--dx), var(--dy)); } }
+
+/* Unidade fundida: círculo simples ao redor das duas peças */
+.hybrid { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+.hybrid::before { content: ''; position: absolute; width: 98%; aspect-ratio: 1; border-radius: 50%; border: 2.5px solid var(--accent); background: rgba(255, 255, 255, .35); }
+.hybrid .pc { position: relative; z-index: 1; flex: none; width: 60%; height: 60%; margin: 0 -8%; filter: none; }
+
+/* ==========================================================
+   Painel lateral
+   ========================================================== */
+.side {
+  width: 340px; flex-shrink: 0; height: calc(var(--board) + 96px);
+  display: flex; flex-direction: column;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 16px; overflow: hidden;
+}
+.status { padding: 18px 20px 16px; }
+.status-title { font-family: 'Archivo', system-ui, sans-serif; font-size: 30px; line-height: 1.1; }
+.status-sub { margin-top: 6px; font-size: 13.5px; color: var(--muted); line-height: 1.4; min-height: 19px; }
+.status-sub.alert { color: var(--danger); font-weight: 700; }
+.mode-chip {
+  margin-top: 12px; display: inline-flex; align-items: center; gap: 8px; min-height: 34px; padding: 0 13px;
+  border-radius: 999px; border: 1px solid var(--line); background: rgba(255, 255, 255, .03);
+  font-size: 12.5px; font-weight: 700; color: #cfd5da; cursor: pointer; transition: border-color .15s, background .15s;
+}
+.mode-chip small { font-size: 12px; font-weight: 600; color: var(--muted); }
+.mode-chip:hover { border-color: #55606a; background: rgba(255, 255, 255, .06); }
+.mode-chip[data-mode="chaos"] { border-color: rgba(240, 96, 93, .5); }
+.mode-chip[data-mode="custom"] { border-color: rgba(77, 109, 255, .55); }
+.mode-chip[data-mode="versus"] { border-color: rgba(77, 109, 255, .6); }
+
+.section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 11px 20px; border-top: 1px solid var(--line); background: var(--panel-2);
+  font-size: 13px; font-weight: 700; color: #cfd5da;
+}
+.section-head .count { font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+.section-head .right { display: flex; align-items: center; gap: 12px; }
+.review-bar { display: flex; align-items: center; gap: 8px; padding: 0 20px 14px; }
+.review-bar[hidden] { display: none; }
+.review-bar .review-pos { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; margin-left: 2px; }
+.review-bar .btn.mini { min-width: 34px; justify-content: center; padding: 0; }
+.btn.mini { min-height: 34px; padding: 0 11px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
+.btn.mini svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.btn.mini.done { border-color: var(--accent); color: var(--accent); }
+.btn.mini.fail { border-color: var(--danger); color: var(--danger); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.history { flex: 1; min-height: 0; overflow-y: auto; list-style: none; padding: 6px 8px; scrollbar-width: thin; scrollbar-color: #434c55 transparent; }
+.history li { display: grid; grid-template-columns: 26px 1fr 1fr; gap: 6px; align-items: center; padding: 4px 8px; border-radius: 8px; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+.history li:nth-child(odd) { background: rgba(255, 255, 255, .03); }
+.history .n { color: #6f7b85; font-weight: 700; }
+.history .mv { display: flex; align-items: center; gap: 6px; min-height: 28px; }
+.history .mv.new { color: var(--text); }
+.chip { display: inline-flex; align-items: center; padding: 1px 4px 1px 8px; border-radius: 999px; background: var(--light); flex-shrink: 0; }
+.chip .pc { width: 20px; height: 20px; margin-left: -6px; filter: none; }
+.sym { color: var(--muted); font-weight: 700; }
+.sym.fuse { color: var(--accent); }
+.sym.cap { color: var(--danger); }
+.history li.empty { display: grid; grid-template-columns: 1fr; place-items: center; height: 100%; padding: 16px; text-align: center; font-size: 13px; color: #6f7b85; background: none; }
+
+.fusion-note { border-top: 1px solid var(--line); padding: 14px 20px 16px; display: flex; gap: 14px; align-items: center; }
+.demo { position: relative; width: 74px; height: 74px; flex-shrink: 0; border-radius: 12px; background: var(--light); }
+.fusion-note p { font-size: 12.5px; line-height: 1.5; color: var(--muted); }
+.fusion-note strong { color: var(--text); font-weight: 700; }
+
+/* ==========================================================
+   Modais
+   ========================================================== */
+.overlay {
+  position: fixed; inset: 0; z-index: 50; display: none; align-items: center; justify-content: center; padding: 16px;
+  background: rgba(5, 7, 9, .72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+.overlay.open { display: flex; }
+.sheet {
+  width: 100%; max-width: 470px; max-height: 88dvh; overflow-y: auto; padding: 26px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 18px;
+  box-shadow: 0 30px 70px -30px rgba(0, 0, 0, .5); animation: rise .22s ease-out;
+}
+@keyframes rise { from { opacity: 0; transform: translateY(10px) scale(.98); } }
+.sheet h2 { font-family: 'Archivo', system-ui, sans-serif; font-weight: 400; font-size: 30px; line-height: 1.1; }
+.sheet .lead { margin-top: 6px; font-size: 14px; color: var(--muted); line-height: 1.5; }
+.sheet .foot { display: flex; gap: 10px; margin-top: 22px; }
+.sheet .foot .btn { flex: 1; min-height: 46px; }
+
+.rule { display: grid; grid-template-columns: 84px 1fr; gap: 16px; padding: 16px 0; border-top: 1px solid var(--line); }
+.rule:first-of-type { margin-top: 18px; }
+.rule .art { position: relative; width: 84px; height: 84px; border-radius: 12px; background: var(--light); display: grid; place-items: center; overflow: hidden; }
+.rule .art > .pc { width: 80%; height: 80%; }
+.rule h3 { font-size: 15px; font-weight: 800; margin-bottom: 4px; }
+.rule p { font-size: 13.5px; line-height: 1.5; color: #b3bcc3; }
+.rule .art .arrow { color: #5b6670; font-weight: 800; font-size: 20px; margin: 0 -2px; z-index: 3; position: relative; }
+.rule .art .badge { position: absolute; left: 0; right: 0; bottom: 6px; text-align: center; font-size: 11px; font-weight: 800; color: #5b6670; z-index: 3; }
+.rule .art.row { display: flex; align-items: center; justify-content: center; gap: 0; }
+.rule .art.row > .pc { width: 42%; height: 42%; }
+
+.promo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+.promo-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 8px 12px;
+  border-radius: 12px; border: 1px solid var(--line); background: var(--panel-2); cursor: pointer; font-weight: 700; font-size: 13px;
+  transition: border-color .15s, transform .1s;
+}
+.promo-btn .box { width: 74px; height: 74px; border-radius: 10px; background: var(--light); display: grid; place-items: center; }
+.promo-btn .pc { width: 88%; height: 88%; }
+.promo-btn:hover:not(:disabled) { border-color: var(--accent); transform: translateY(-2px); }
+.promo-btn:disabled { opacity: .35; cursor: not-allowed; }
+.promo-btn small { font-weight: 500; font-size: 11px; color: var(--muted); text-align: center; line-height: 1.3; }
+
+.medals { display: flex; justify-content: center; gap: 10px; margin: 4px 0 16px; }
+.medal { width: 104px; height: 104px; border-radius: 50%; background: var(--light); display: grid; place-items: center; box-shadow: inset 0 0 0 2px var(--line); }
+.medal .pc { width: 84%; height: 84%; }
+.center { text-align: center; }
+
+/* Configuração da partida */
+.field { margin-top: 20px; }
+.field-label { font-size: 13px; font-weight: 700; color: #cfd5da; margin-bottom: 8px; }
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; padding: 4px; border-radius: 12px; background: var(--panel-2); border: 1px solid var(--line); }
+.seg button { min-height: 42px; padding: 0 8px; border: 0; border-radius: 9px; background: transparent; color: var(--muted); font-weight: 700; font-size: 13.5px; cursor: pointer; transition: background .15s, color .15s; }
+.seg button:hover { background: rgba(255, 255, 255, .06); color: var(--text); }
+.seg button[aria-checked="true"] { background: var(--accent); color: #ffffff; }
+.seg button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.hint { margin-top: 10px; font-size: 13px; line-height: 1.5; color: var(--muted); min-height: 60px; }
+.hint.short { min-height: 40px; margin-bottom: 10px; }
+
+/* Lista de regras (Nova partida) */
+.rule-list { display: flex; flex-direction: column; gap: 6px; }
+.rule-row {
+  display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; padding: 10px 12px;
+  border-radius: 11px; border: 1px solid var(--line); background: var(--panel-2); cursor: pointer;
+  transition: border-color .15s;
+}
+.rule-row:not(:disabled):hover { border-color: #55606a; }
+.rule-row:disabled { cursor: default; }
+.rule-row .txt { flex: 1; min-width: 0; }
+.rule-row strong { display: block; font-size: 13.5px; font-weight: 700; }
+.rule-row small { display: block; margin-top: 2px; font-size: 12px; line-height: 1.4; color: var(--muted); }
+.sw { position: relative; width: 42px; height: 24px; border-radius: 999px; background: #3a424a; flex-shrink: 0; transition: background .15s; }
+.sw::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #ffffff; transition: transform .15s, background .15s; }
+.rule-row[aria-checked="true"] .sw { background: var(--accent); }
+.rule-row[aria-checked="true"] .sw::after { transform: translateX(18px); background: #ffffff; }
+.rule-row:disabled .sw { opacity: .55; }
+
+/* Regras da partida (modal Regras) */
+.rules-head { margin-top: 8px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 13px; font-weight: 700; color: #cfd5da; }
+.rules-head span { color: var(--muted); font-weight: 600; }
+.rule.off { opacity: .5; }
+.rule.off .art { filter: grayscale(1); }
+.rule h3 .pill { margin-left: 6px; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; vertical-align: 1px; border: 1px solid var(--line); color: var(--muted); }
+.rule h3 .pill.on { border-color: rgba(77, 109, 255, .6); color: var(--accent); }
+.tag .role { font-size: 11.5px; font-weight: 700; padding: 2px 9px; border-radius: 999px; border: 1px solid var(--line); color: #b3bcc3; }
+.tag .role.fusion { border-color: rgba(77, 109, 255, .6); color: var(--accent); }
+.tag .role.classic { border-color: rgba(77, 109, 255, .55); color: #b3bcc3; }
+
+/* ==========================================================
+   Peças (SVG) – tamanhos utilitários
+   ========================================================== */
+.pc { display: block; overflow: visible; }
+
+/* ==========================================================
+   Responsivo
+   ========================================================== */
+@media (max-width: 1099px) {
+  .stage { flex-direction: column; align-items: center; gap: 18px; }
+  .side { width: var(--board); height: auto; }
+  .history { max-height: 220px; min-height: 120px; flex: none; }
+}
+.btn[aria-pressed="false"] { color: var(--muted); }
+@media (max-width: 520px) {
+  .snd { display: none; }
+  .btn[aria-pressed="false"] { text-decoration: line-through; }
+  .brand h1 { font-size: 24px; }
+  .actions { width: 100%; }
+  .actions .btn { flex: 1 1 auto; padding: 0 10px; }
+  .status-title { font-size: 26px; }
+  .rule { grid-template-columns: 68px 1fr; gap: 12px; }
+  .rule .art { width: 68px; height: 68px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+.brand h1, .sheet h2, .status-title { font-weight: 700; letter-spacing: -.015em; }
+.btn, .seg button, .mode-chip { border-radius: 6px; }
+.frame { border-radius: 6px; }
+.board { border-radius: 2px; }
+.side { border-radius: 8px; }
+.sheet { border-radius: 10px; }
+.tray, .demo, .rule .art, .promo-btn .box { box-shadow: inset 0 0 0 1px var(--line); }
+#seg-opponent { grid-auto-flow: row; grid-template-columns: repeat(3, 1fr); }
+.net-line { margin-top: 10px; font-size: 12.5px; color: var(--muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.net-line.alert { color: var(--danger); font-weight: 700; }
+.code-in { width: 100%; margin-top: 18px; min-height: 58px; text-align: center; font: 800 28px/1 'Archivo', system-ui, sans-serif; letter-spacing: .3em; padding-left: .3em; text-transform: uppercase; background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; color: var(--text); -webkit-user-select: text; user-select: text; }
+.code-in:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.code-box { margin-top: 18px; padding: 16px 16px 16px 26px; text-align: center; font-size: 40px; font-weight: 800; letter-spacing: .3em; border: 1px dashed #55606a; border-radius: 8px; -webkit-user-select: text; user-select: text; }
+.hint.alert { color: var(--danger); min-height: 0; font-weight: 700; }
+.btn.danger { background: var(--danger); border-color: var(--danger); color: #ffffff; }
+.btn.danger:hover:not(:disabled) { background: #ee6a66; border-color: #ee6a66; }
+.btn.done { border-color: var(--accent); color: var(--accent); }
+.btn.fail { border-color: var(--danger); color: var(--danger); }
+.sheet .foot.tight { margin-top: 10px; }
+.sheet .foot.tight .btn { min-height: 42px; }
+.toast {
+  position: fixed; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); z-index: 80;
+  transform: translate(-50%, 12px); opacity: 0; pointer-events: none; max-width: min(92vw, 420px);
+  padding: 11px 16px; font-size: 13.5px; font-weight: 600; line-height: 1.35; text-align: center;
+  color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+  box-shadow: 0 18px 40px -18px rgba(0, 0, 0, .6); transition: opacity .2s ease, transform .2s ease;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast.alert { border-color: var(--danger); color: var(--danger); }
+
+/* Indicador de ping / qualidade da conexão (cabeçalho da sala online) */
+.net-ping{display:inline-flex;align-items:center;gap:.4em;font-size:.82em;font-variant-numeric:tabular-nums;padding:.08em .6em;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.net-ping::before{content:"";width:.55em;height:.55em;border-radius:50%;background:currentColor}
+.net-ping.q-good{color:#2e9e5b}.net-ping.q-fair{color:#c99a12}.net-ping.q-poor{color:#d64545}.net-ping.q-off,.net-ping.q-idle{color:#8a8f98}
+.net-ping.q-poor::before,.net-ping.q-off::before{animation:netblink 1s infinite}
+@keyframes netblink{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.net-ping::before{animation:none!important}}
+</style>
+</head>
+<body>
+
+
+<header class="top">
+  <div class="brand">
+    <div class="brand-mark" id="brand-mark" aria-hidden="true"></div>
+    <div>
+      <h1>Fusion Chess</h1>
+      <p>Chess where your pieces can merge.</p>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn" id="btn-undo" onclick="undo()">Undo</button>
+    <button class="btn" id="btn-back" onclick="reviewBack()" title="Step back one move">Back</button>
+    <button class="btn" id="btn-resume" onclick="reviewJumpLive()" hidden>Back to current</button>
+    <button class="btn" id="btn-ai-pause" onclick="toggleAiPause()" hidden>Pause</button>
+    <button class="btn" id="btn-ai-step" onclick="aiStep()" hidden>Next move</button>
+    <button class="btn" onclick="flipBoard()">Flip</button>
+    <button class="btn" id="btn-sound" onclick="toggleSound()" aria-pressed="true">Sound<span class="snd"> on</span></button>
+    <button class="btn" onclick="openOnline()">Join room</button>
+    <button class="btn" onclick="openRules()">Rules</button>
+    <button class="btn primary" onclick="openSetup()">New game</button>
+  </div>
+</header>
+
+<main class="stage">
+  <section class="board-col" aria-label="Board">
+    <div class="tag" id="tag-top"></div>
+    <div class="frame"><div class="board" id="board" role="grid" aria-label="Chess board"></div></div>
+    <div class="tag" id="tag-bottom"></div>
+  </section>
+
+  <aside class="side" aria-label="Game">
+    <div class="status" aria-live="polite">
+      <div class="status-title" id="status-title">White's turn</div>
+      <div class="status-sub" id="status-sub">Tap a piece to see its moves.</div>
+      <div class="net-line" id="net-line" hidden></div>
+      <button type="button" class="mode-chip" id="mode-chip" onclick="openRules()" title="View the rules for this game"></button>
+    </div>
+    <div class="review-bar" id="review-bar" hidden>
+      <button type="button" class="btn mini" id="btn-review-back" onclick="reviewBack()" title="Previous move">
+        <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M11 3 L5 8 L11 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button type="button" class="btn mini" id="btn-review-play" onclick="toggleReviewPlay()" title="Play / pause">
+        <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" id="review-play-icon"><path d="M5 3 L13 8 L5 13 Z"/></svg>
+      </button>
+      <button type="button" class="btn mini" id="btn-review-forward" onclick="reviewForward()" title="Next move">
+        <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M5 3 L11 8 L5 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="review-pos" id="review-pos">Move 0 / 0</span>
+    </div>
+    <div class="section-head">
+      <span>Moves</span>
+      <span class="right">
+        <span class="count" id="move-count">0</span>
+        <button type="button" class="btn mini" id="btn-copy" onclick="copyHistory()" disabled title="Copy the move and fusion history">
+          <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><rect x="5.5" y="5.5" width="8" height="8" rx="1.8"/><path d="M10.5 3.5V3.3C10.5 2.3 9.7 1.5 8.7 1.5H3.8C2.8 1.5 2 2.3 2 3.3v4.9c0 1 .8 1.8 1.8 1.8h.2"/></svg>
+          <span id="copy-label">Copy</span>
+        </button>
+        <span class="sr-only" id="copy-status" aria-live="polite"></span>
+      </span>
+    </div>
+    <ol class="history" id="history"></ol>
+    <div class="fusion-note">
+      <div class="demo" id="demo-hybrid" aria-hidden="true"></div>
+      <p id="fusion-note-text"></p>
+    </div>
+  </aside>
+</main>
+
+<!-- Promotion -->
+<div class="overlay" id="modal-promotion" role="dialog" aria-modal="true" aria-labelledby="promo-title">
+  <div class="sheet center">
+    <h2 id="promo-title">Promote the pawn</h2>
+    <p class="lead" id="promo-lead">Choose the new piece. The other half of the unit stays the same.</p>
+    <div class="promo-grid" id="promo-grid"></div>
+  </div>
+</div>
+
+<!-- Rules -->
+<div class="overlay" id="modal-rules" role="dialog" aria-modal="true" aria-labelledby="rules-title">
+  <div class="sheet">
+    <h2 id="rules-title">Fusion rules</h2>
+    <p class="lead" id="rules-lead">Chess as usual, with one extra move: fuse two of your pieces into one.</p>
+
+    <div class="rule">
+      <div class="art" id="art-fuse"></div>
+      <div><h3>Fuse</h3><p>Move a piece onto another of the same color (violet square). They become one unit with the moves of both. Fusing uses up your turn.</p></div>
+    </div>
+    <div class="rule">
+      <div class="art row" id="art-limits"></div>
+      <div><h3>Limits</h3><p>At most two pieces per square. A fused unit cannot fuse again. The King is left out.</p></div>
+    </div>
+    <div class="rule">
+      <div class="art" id="art-unit"></div>
+      <div><h3>Absolute unit</h3><p>Fusion is permanent. The unit moves together and is captured together: both pieces leave the board at once.</p></div>
+    </div>
+    <div class="rule">
+      <div class="art" id="art-promo"></div>
+      <div><h3>Promotion</h3><p>If a unit containing a pawn reaches the last rank, only the pawn is promoted. The other piece stays the same.</p></div>
+    </div>
+    <div class="rule">
+      <div class="art row" id="art-castle"></div>
+      <div><h3>Castling, en passant, draws</h3><p>Castling works as in classic chess, but only with a pure King and a pure Rook: neither can be fused. In Classic vs Fusion, the classic side can also capture en passant, but only against an unfused Fusion pawn. A game is drawn when only Kings remain, or a King plus a single Bishop or Knight against a lone King.</p></div>
+    </div>
+
+    <div class="rules-head" id="rules-head"></div>
+    <div id="rules-dynamic"></div>
+
+    <div class="foot"><button class="btn primary" onclick="closeModal('modal-rules')">Got it, let's play</button></div>
+  </div>
+</div>
+
+<!-- New game -->
+<div class="overlay" id="modal-setup" role="dialog" aria-modal="true" aria-labelledby="setup-title">
+  <div class="sheet">
+    <h2 id="setup-title">New game</h2>
+    <p class="lead">Choose the game mode, who to play against, and which rules to use.</p>
+
+    <div class="field" style="margin-top:18px">
+      <div class="field-label" id="lbl-gm">Game mode</div>
+      <div class="seg" role="radiogroup" aria-labelledby="lbl-gm" id="seg-gamemode">
+        <button type="button" role="radio" data-v="fusion" onclick="pickSetup('gameMode', 'fusion')">Fusion Chess</button>
+        <button type="button" role="radio" data-v="versus" onclick="pickSetup('gameMode', 'versus')">Classic vs Fusion</button>
+      </div>
+      <p class="hint short" id="gm-hint"></p>
+    </div>
+
+    <div class="field" id="field-fusionside" style="margin-top:4px">
+      <div class="field-label" id="lbl-fside">Who plays Fusion</div>
+      <div class="seg" role="radiogroup" aria-labelledby="lbl-fside" id="seg-fusionside">
+        <button type="button" role="radio" data-v="white" onclick="pickSetup('fusionSide', 'white')">White</button>
+        <button type="button" role="radio" data-v="black" onclick="pickSetup('fusionSide', 'black')">Black</button>
+      </div>
+      <p class="hint short" style="margin-bottom:0">The other side plays classic chess, with no fusions.</p>
+    </div>
+
+    <div class="field">
+      <div class="field-label" id="lbl-opp">Opponent</div>
+      <div class="seg" role="radiogroup" aria-labelledby="lbl-opp" id="seg-opponent">
+        <button type="button" role="radio" data-v="human" onclick="pickSetup('opponent', 'human')">Two players</button>
+        <button type="button" role="radio" data-v="online" onclick="pickSetup('opponent', 'online')">Online</button>
+        <button type="button" role="radio" data-v="easy" onclick="pickSetup('opponent', 'easy')">Easy AI</button>
+        <button type="button" role="radio" data-v="medium" onclick="pickSetup('opponent', 'medium')">Medium AI</button>
+        <button type="button" role="radio" data-v="hard" onclick="pickSetup('opponent', 'hard')">Strong AI</button>
+        <button type="button" role="radio" data-v="ai_vs_ai" onclick="pickSetup('opponent', 'ai_vs_ai')">AI vs AI</button>
+      </div>
+      <p class="hint" id="opp-hint"></p>
+    </div>
+
+    <div class="field" id="field-side" style="margin-top:4px">
+      <div class="field-label" id="lbl-side">You play as</div>
+      <div class="seg" role="radiogroup" aria-labelledby="lbl-side" id="seg-side">
+        <button type="button" role="radio" data-v="white" onclick="pickSetup('side', 'white')">White</button>
+        <button type="button" role="radio" data-v="black" onclick="pickSetup('side', 'black')">Black</button>
+      </div>
+    </div>
+
+    <div class="field" id="field-aivai" style="margin-top:4px">
+      <div class="field-label" id="lbl-ai-white">White's difficulty</div>
+      <div class="seg" role="radiogroup" aria-labelledby="lbl-ai-white" id="seg-ai-white">
+        <button type="button" role="radio" data-v="easy" onclick="pickSetup('aiWhite', 'easy')">Easy</button>
+        <button type="button" role="radio" data-v="medium" onclick="pickSetup('aiWhite', 'medium')">Medium</button>
+        <button type="button" role="radio" data-v="hard" onclick="pickSetup('aiWhite', 'hard')">Strong</button>
+      </div>
+      <div class="field-label" id="lbl-ai-black" style="margin-top:10px">Black's difficulty</div>
+      <div class="seg" role="radiogroup" aria-labelledby="lbl-ai-black" id="seg-ai-black">
+        <button type="button" role="radio" data-v="easy" onclick="pickSetup('aiBlack', 'easy')">Easy</button>
+        <button type="button" role="radio" data-v="medium" onclick="pickSetup('aiBlack', 'medium')">Medium</button>
+        <button type="button" role="radio" data-v="hard" onclick="pickSetup('aiBlack', 'hard')">Strong</button>
+      </div>
+      <div class="field-label" id="lbl-ai-speed" style="margin-top:10px">Move speed</div>
+      <div class="seg" role="radiogroup" aria-labelledby="lbl-ai-speed" id="seg-ai-speed">
+        <button type="button" role="radio" data-v="slow" onclick="pickSetup('aiSpeed', 'slow')">Slow</button>
+        <button type="button" role="radio" data-v="normal" onclick="pickSetup('aiSpeed', 'normal')">Normal</button>
+        <button type="button" role="radio" data-v="fast" onclick="pickSetup('aiSpeed', 'fast')">Fast</button>
+      </div>
+      <p class="hint short">You can pause and step through the game move by move at any time.</p>
+    </div>
+
+    <div class="field" id="field-mode">
+      <div class="field-label" id="lbl-mode">Fusion rules</div>
+      <div class="seg" role="radiogroup" aria-labelledby="lbl-mode" id="seg-mode">
+        <button type="button" role="radio" data-v="balanced" onclick="pickSetup('mode', 'balanced')">Balanced</button>
+        <button type="button" role="radio" data-v="chaos" onclick="pickSetup('mode', 'chaos')">Chaos</button>
+        <button type="button" role="radio" data-v="custom" onclick="pickSetup('mode', 'custom')">Custom</button>
+      </div>
+      <p class="hint short" id="mode-hint"></p>
+      <div class="rule-list" id="rule-list"></div>
+    </div>
+
+    <div class="foot">
+      <button class="btn" onclick="closeModal('modal-setup')">Cancel</button>
+      <button class="btn primary" onclick="applySetup()">Start</button>
+    </div>
+  </div>
+</div>
+
+<!-- Online -->
+<div class="overlay" id="modal-online" role="dialog" aria-modal="true" aria-labelledby="on-title">
+  <div class="sheet">
+    <h2 id="on-title">Join a room</h2>
+    <p class="lead" id="on-lead"></p>
+    <div id="on-body"></div>
+  </div>
+</div>
+
+<!-- Game over -->
+<div class="overlay" id="modal-gameover" role="dialog" aria-modal="true" aria-labelledby="over-title">
+  <div class="sheet center">
+    <div class="medals" id="over-medals"></div>
+    <h2 id="over-title">Checkmate</h2>
+    <p class="lead" id="over-desc"></p>
+    <p class="lead" id="over-net" hidden></p>
+    <div class="foot">
+      <button class="btn" onclick="closeModal('modal-gameover')">View board</button>
+      <button class="btn primary" id="btn-play-again" onclick="playAgain()">Play again</button>
+    </div>
+    <div class="foot tight">
+      <button type="button" class="btn" id="btn-copy-over" onclick="copyHistory()" title="Copy the move and fusion history">Copy game history</button>
+    </div>
+    <span class="sr-only" id="copy-over-status" aria-live="polite"></span>
+  </div>
+</div>
+
+<!-- Resign confirmation (online games in progress) -->
+<div class="overlay" id="modal-resign" role="alertdialog" aria-modal="true" aria-labelledby="resign-title" aria-describedby="resign-lead">
+  <div class="sheet center">
+    <h2 id="resign-title">Are you sure you want to resign?</h2>
+    <p class="lead" id="resign-lead">You lose this game by resignation, your opponent wins, and you leave the room.</p>
+    <div class="foot">
+      <button class="btn" id="btn-resign-cancel" onclick="cancelResign()">Keep playing</button>
+      <button class="btn danger" onclick="confirmResign()">Resign</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ==========================================================
+   1. Constantes e utilidades
+   ========================================================== */
+const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+const NAMES = { king: 'King', queen: 'Queen', rook: 'Rook', bishop: 'Bishop', knight: 'Knight', pawn: 'Pawn' };
+const VALUE = { queen: 5, rook: 4, bishop: 3, knight: 2, pawn: 1, king: 0 };
+const SIDE_NAME = { white: 'White', black: 'Black' };
+
+/* Regras opcionais da fusão. As regras estruturais (Rei não funde, no máximo duas peças
+   por casa, unidade fundida não funde de novo) valem sempre e não aparecem aqui. */
+const RULE_DEFS = [
+  { key: 'noKnightQueen', title: 'Knight + Queen', short: 'Knight and Queen cannot fuse.' },
+  { key: 'noRookBishop',  title: 'Rook + Bishop',   short: 'Rook and Bishop cannot fuse.' },
+  { key: 'cooldown',      title: 'Fusion cooldown', short: 'After fusing, the next move cannot be a fusion.' },
+  { key: 'promoDiff',     title: 'Different promotion', short: 'A fused pawn can only become a piece different from its partner.' }
+];
+const MODE_LABEL = { balanced: 'Balanced', chaos: 'Chaos', custom: 'Custom' };
+const allRules = (on) => Object.fromEntries(RULE_DEFS.map((d) => [d.key, on]));
+/* Regras efetivas de uma configuração: Balanceado = todas, Caos = nenhuma, Personalizado = escolha do jogador */
+const rulesFor = (s) => (s.mode === 'balanced' ? allRules(true) : s.mode === 'chaos' ? allRules(false) : { ...allRules(false), ...s.custom });
+
+const $ = (id) => document.getElementById(id);
+const inBounds = (r, c) => r >= 0 && r < 8 && c >= 0 && c < 8;
+const other = (color) => (color === 'white' ? 'black' : 'white');
+const sqName = (r, c) => `${FILES[c]}${8 - r}`;
+const cloneBoard = (b) => b.map((row) => row.map((cell) => cell.map((p) => ({ ...p }))));
+
+/* Chave de posição (tabuleiro + quem move) usada para detectar repetição.
+   Letras no padrão SAN (peão=p, cavalo=n, bispo=b, torre=r, dama=q, rei=k);
+   maiúscula = Brancas. Casas fundidas entram ordenadas para não depender da ordem interna. */
+const POS_LETTER = { pawn: 'p', knight: 'n', bishop: 'b', rook: 'r', queen: 'q', king: 'k' };
+function positionKey(board, turn, cast) {
+  let s = turn === 'white' ? 'w' : 'b';
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const cell = board[r][c];
+      if (!cell.length) continue;
+      const letters = cell.map((p) => (p.color === 'white' ? POS_LETTER[p.type].toUpperCase() : POS_LETTER[p.type])).sort();
+      s += `${r}${c}${letters.join('')}`;
+    }
+  }
+  if (cast) s += `|${cast.wK ? 'K' : ''}${cast.wQ ? 'Q' : ''}${cast.bK ? 'k' : ''}${cast.bQ ? 'q' : ''}`;   // direitos de roque fazem parte da posição
+  return s;
+}
+/* Conta quantas vezes a posição atual (tabuleiro + turno) já apareceu nos quadros da partida */
+function countRepetitions() {
+  const key = positionKey(G.board, G.turn, G.cast);
+  let count = 0;
+  for (const f of G.frames) if ((f.key || (f.key = positionKey(f.board, f.turnToMove, f.cast))) === key) count++;
+  return count;
+}
+/* Lances desde a última captura, fusão ou movimento de peão (regra dos 50 lances = 100 meios-lances) */
+function halfmoveClock() {
+  let n = 0;
+  for (let i = G.history.length - 1; i >= 0; i--) {
+    const h = G.history[i];
+    if ((h.kind !== 'move' && h.kind !== 'castle') || h.pieces.includes('pawn')) break;   // roque não zera o contador
+    n++;
+  }
+  return n;
+}
+/* Material insuficiente: só Reis, ou Rei + um único Bispo/Cavalo contra Rei (fundido ou não: verificado por força bruta,
+   uma unidade Rei+Bispo ou Rei+Cavalo não consegue dar mate num Rei sozinho). */
+function insufficientMaterial(board) {
+  const rest = [];
+  for (const row of board) for (const cell of row) for (const p of cell) if (p.type !== 'king') rest.push(p.type);
+  return rest.length === 0 || (rest.length === 1 && (rest[0] === 'bishop' || rest[0] === 'knight'));
+}
+
+function pieceLabel(p) {
+  const col = p.color === 'white' ? 'White' : 'Black';
+  return `${col} ${NAMES[p.type]}`;
+}
+
+/* ==========================================================
+   2. Peças em SVG (desenhadas em uma grade 100×100)
+   ========================================================== */
+const BASE = `<rect x="22" y="80" width="56" height="10" rx="4.5"/><rect x="29" y="72" width="42" height="9" rx="3.5"/>`;
+
+const SHAPES = {
+  pawn: `
+    <circle cx="50" cy="29" r="11"/>
+    <rect x="37" y="40" width="26" height="6" rx="3"/>
+    <path d="M42 46 C42 59 38 67 31 73 H69 C62 67 58 59 58 46 Z"/>`,
+  rook: `
+    <path d="M29 15 H40 V23 H45 V15 H55 V23 H60 V15 H71 V32 H29 Z"/>
+    <path d="M33 32 H67 L64 41 H36 Z"/>
+    <path d="M37 41 H63 L67 73 H33 Z"/>`,
+  bishop: `
+    <circle cx="50" cy="13" r="5"/>
+    <path d="M50 19 C65 27 69 42 60 52 H40 C31 42 35 27 50 19 Z"/>
+    <rect x="35" y="51" width="30" height="8" rx="4"/>
+    <path d="M41 59 C41 67 38 70 33 73 H67 C62 70 59 67 59 59 Z"/>`,
+  knight: `
+    <path d="M31 73 C29 60 38 53 44 45 C38 47 33 50 27 50 C21 50 18 45 21 40 C24 34 32 27 35 19 L34 10 L43 16 C48 14 53 14 58 16 L63 9 L64 20 C76 29 80 50 76 62 C74 68 73 71 74 73 Z"/>`,
+  queen: `
+    <path d="M23 33 L33 56 H67 L77 33 L67 44 L64 27 L57 43 L50 24 L43 43 L36 27 L33 44 Z"/>
+    <circle cx="23" cy="30" r="4"/><circle cx="36" cy="24" r="4"/><circle cx="50" cy="20" r="4"/>
+    <circle cx="64" cy="24" r="4"/><circle cx="77" cy="30" r="4"/>
+    <rect x="32" y="55" width="36" height="7" rx="3.5"/>
+    <path d="M37 62 C37 68 34 71 30 73 H70 C66 71 63 68 63 62 Z"/>`,
+  king: `
+    <path d="M46 5 H54 V11 H60 V18 H54 V26 H46 V18 H40 V11 H46 Z"/>
+    <path d="M50 26 C68 26 75 40 71 54 H29 C25 40 32 26 50 26 Z"/>
+    <rect x="28" y="53" width="44" height="8" rx="4"/>
+    <path d="M36 61 C36 68 33 71 29 73 H71 C67 71 64 68 64 61 Z"/>`
+};
+
+/* Traços de acabamento (brilho, olho, crina). {D} = cor de detalhe */
+const DETAILS = {
+  pawn: `<path d="M44 25 A7 7 0 0 1 50 22"/><path d="M46 52 C46 61 43 67 39 71"/>`,
+  rook: `<path d="M38 20 V29"/><path d="M41 47 L39 67"/><path d="M36 36 H64" opacity=".5"/>`,
+  bishop: `<path d="M45 39 L56 31"/><path d="M44 33 C45 29 47 27 49 25"/><path d="M45 63 C45 66 43 68 41 70"/>`,
+  knight: `<circle cx="36" cy="29" r="2.3" fill="{D}" stroke="none"/><path d="M60 24 C70 33 71 50 66 62"/><path d="M23 43 L25 44"/><path d="M40 58 C42 54 44 52 46 50" opacity=".6"/>`,
+  queen: `<path d="M40 48 L37 36"/><path d="M60 48 L63 36"/><path d="M50 32 V49"/><path d="M42 66 C42 68 40 70 38 71"/>`,
+  king: `<path d="M50 32 V50"/><path d="M40 37 C41 33 44 31 47 30"/><path d="M42 66 C42 68 40 70 38 71"/><path d="M48 9 V22" opacity=".55"/>`
+};
+
+function pieceSVG(type, color, cls = '') {
+  const white = color === 'white';
+  const fill = white ? '#f7f6f1' : '#1f2328';
+  const stroke = white ? '#1a1d21' : '#020304';
+  const detail = white ? '#a99b80' : '#a5aec4';
+  return `<svg class="pc ${cls}" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+    <g fill="${fill}" stroke="${stroke}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">${SHAPES[type]}${BASE}</g>
+    <g fill="none" stroke="${detail}" stroke-width="1.7" stroke-linecap="round" opacity=".9">${DETAILS[type].replace(/\{D\}/g, detail)}</g>
+  </svg>`;
+}
+
+/* Uma unidade = 1 peça, ou 2 peças fundidas com anel de energia */
+function unitHTML(types, color) {
+  if (types.length === 1) return pieceSVG(types[0], color);
+  return `<div class="hybrid">${pieceSVG(types[0], color)}${pieceSVG(types[1], color)}</div>`;
+}
+function chipHTML(types, color) {
+  return `<span class="chip">${types.map((t) => pieceSVG(t, color)).join('')}</span>`;
+}
+
+/* ==========================================================
+   3. Som (Web Audio)
+   ========================================================== */
+let soundEnabled = true;
+let audioCtx = null;
+
+function getAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+const SOUNDS = {
+  move:    { type: 'sine',     f: [[350, 0], [200, .1]],                     dur: .1,  vol: .2,  ramp: true },
+  capture: { type: 'sawtooth', f: [[120, 0], [50, .15]],                     dur: .15, vol: .3,  ramp: true },
+  merge:   { type: 'sine',     f: [[130, 0], [220, .25]],                    dur: .3,  vol: .35, ramp: true },
+  check:   { type: 'square',   f: [[400, 0], [600, .1]],                     dur: .3,  vol: .15, ramp: false },
+  win:     { type: 'triangle', f: [[440, 0], [554.37, .15], [659.25, .3]],   dur: .6,  vol: .3,  ramp: false }
+};
+
+function playSound(name) {
+  if (!soundEnabled) return;
+  try {
+    const s = SOUNDS[name];
+    const ctx = getAudio();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    const t = ctx.currentTime;
+    osc.type = s.type;
+    s.f.forEach(([hz, at], i) => {
+      if (i === 0 || !s.ramp) osc.frequency.setValueAtTime(hz, t + at);
+      else osc.frequency.exponentialRampToValueAtTime(hz, t + at);
+    });
+    gain.gain.setValueAtTime(s.vol, t);
+    gain.gain.linearRampToValueAtTime(0.01, t + s.dur);
+    osc.start(t); osc.stop(t + s.dur);
+  } catch (e) { console.warn('Audio unavailable:', e); }
+}
+
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  const btn = $('btn-sound');
+  btn.innerHTML = `Sound<span class="snd"> ${soundEnabled ? 'on' : 'off'}</span>`;
+  btn.setAttribute('aria-pressed', String(soundEnabled));
+}
+
+/* ==========================================================
+   4. Estado do jogo
+   ========================================================== */
+const G = {
+  board: [], turn: 'white', flipped: false,
+  selected: null, legal: [],
+  history: [], captured: { white: [], black: [] },
+  last: null, fx: null,
+  cast: freshCast(),   // direitos de roque ainda disponíveis (Rei e Torres que nunca saíram de e1/a1/h1 e e8/a8/h8)
+  ep: null,            // casa de en passant aberta pelo último lance: { r, c, vr, vc } (alvo e peão a capturar) ou null
+  over: false, result: null, promo: null,
+  ai: null,            // { white: nível|null, black: nível|null } ou null (duas pessoas). nível: 'easy'|'medium'|'hard'
+  aiPaused: false,     // pausa manual do modo IA vs IA
+  thinking: false,
+  mode: 'balanced',    // modo de regras da partida em andamento
+  rules: allRules(true),
+  gameMode: 'fusion',  // 'fusion' = os dois lados fundem | 'versus' = um lado joga Clássico e o outro Fusion
+  classicSide: null,   // no modo 'versus': cor que joga xadrez clássico (não pode fundir)
+  frames: [], viewIndex: 0, autoplay: false, autoplayTimer: null   // revisão da partida (voltar/avançar/play)
+};
+let snapshots = [];
+let aiToken = 0;       // invalida buscas antigas (desfazer, nova partida)
+let setup = { gameMode: 'fusion', fusionSide: 'white', opponent: 'medium', side: 'white', mode: 'balanced', custom: allRules(true), customEdited: false, aiWhite: 'easy', aiBlack: 'medium', aiSpeed: 'normal' };
+let pending = { ...setup, custom: { ...setup.custom } };
+
+const isAiTurn = () => !!G.ai && !!G.ai[G.turn] && !G.over;
+const bothAiControlled = () => !!G.ai && !!G.ai.white && !!G.ai.black;
+function aiLabelFor(color) { return G.ai && G.ai[color] ? AI_LEVELS[G.ai[color]].label : null; }
+function sideDisplayName(color) {
+  const lbl = aiLabelFor(color);
+  return lbl ? `${SIDE_NAME[color]} (${lbl})` : `${SIDE_NAME[color]} (you)`;
+}
+
+function snapshot() {
+  return {
+    board: cloneBoard(G.board), turn: G.turn,
+    captured: { white: G.captured.white.map((p) => ({ ...p })), black: G.captured.black.map((p) => ({ ...p })) },
+    history: G.history.map((h) => ({ ...h })), last: G.last ? { ...G.last } : null,
+    cast: { ...G.cast }, ep: G.ep ? { ...G.ep } : null
+  };
+}
+
+/* ---------- Match review (back / forward / play-pause) ---------- */
+const isReviewing = () => G.viewIndex < G.frames.length - 1;
+function makeFrame(turnToMove) {
+  return {
+    board: cloneBoard(G.board),
+    captured: { white: G.captured.white.map((p) => ({ ...p })), black: G.captured.black.map((p) => ({ ...p })) },
+    last: G.last ? { ...G.last } : null,
+    cast: { ...G.cast },
+    turnToMove: turnToMove !== undefined ? turnToMove : G.turn
+  };
+}
+function initFrames() {
+  stopAutoplay();
+  G.frames = [makeFrame()];   // posição inicial: G.turn ainda é 'white', ninguém jogou
+  G.viewIndex = 0;
+}
+/* Chamado em completeTurn() antes do turno virar: other(G.turn) é quem joga a seguir nesse quadro */
+function pushFrame() { G.frames.push(makeFrame(other(G.turn))); }
+function stopAutoplay() {
+  G.autoplay = false;
+  if (G.autoplayTimer) { clearInterval(G.autoplayTimer); G.autoplayTimer = null; }
+}
+function goToFrame(i) {
+  G.viewIndex = Math.max(0, Math.min(G.frames.length - 1, i));
+  render();
+}
+function reviewBack() { if (G.promo) return; stopAutoplay(); if (G.viewIndex > 0) goToFrame(G.viewIndex - 1); }
+function reviewForward() { if (G.promo) return; stopAutoplay(); if (G.viewIndex < G.frames.length - 1) goToFrame(G.viewIndex + 1); }
+function reviewJumpLive() { if (G.promo) return; stopAutoplay(); goToFrame(G.frames.length - 1); }
+function autoplayStep() {
+  if (G.viewIndex >= G.frames.length - 1) { stopAutoplay(); render(); return; }
+  G.viewIndex++;
+  render();
+  if (G.viewIndex >= G.frames.length - 1) stopAutoplay();
+}
+function toggleReviewPlay() {
+  if (G.promo) return;
+  if (G.autoplay) { stopAutoplay(); render(); return; }
+  if (G.frames.length < 2) return;
+  if (G.viewIndex >= G.frames.length - 1) G.viewIndex = 0;   // recomeça do início se já estiver no fim
+  G.autoplay = true;
+  render();
+  G.autoplayTimer = setInterval(autoplayStep, 800);
+}
+
+function initGame() {
+  const back = ['rook', 'knight', 'bishop', 'queen', 'king', 'bishop', 'knight', 'rook'];
+  G.board = Array.from({ length: 8 }, () => Array.from({ length: 8 }, () => []));
+  for (let c = 0; c < 8; c++) {
+    G.board[0][c] = [{ type: back[c], color: 'black' }];
+    G.board[1][c] = [{ type: 'pawn', color: 'black' }];
+    G.board[6][c] = [{ type: 'pawn', color: 'white' }];
+    G.board[7][c] = [{ type: back[c], color: 'white' }];
+  }
+  Object.assign(G, {
+    turn: 'white', selected: null, legal: [], history: [],
+    captured: { white: [], black: [] }, last: null, fx: null, cast: freshCast(), ep: null,
+    over: false, result: null, promo: null, thinking: false
+  });
+  snapshots = [];
+  initFrames();
+  render();
+  maybeAiMove();
+}
+
+function startGame() {
+  cancelAi();
+  if (setup.opponent === 'online') { hostOnline(); return; }
+  if (NET.on) netReset();
+  if (setup.opponent === 'human') {
+    G.ai = null;
+    G.flipped = false;
+  } else if (setup.opponent === 'ai_vs_ai') {
+    G.ai = { white: setup.aiWhite, black: setup.aiBlack };
+    G.flipped = false;
+  } else {
+    G.ai = { [setup.side]: null, [other(setup.side)]: setup.opponent };
+    G.flipped = setup.side === 'black';
+  }
+  G.aiPaused = false;
+  if (setup.gameMode === 'versus') {
+    // Clássico vs Fusion: um lado joga xadrez normal (sem fusões), o outro joga Fusion no modo Balanceado
+    G.gameMode = 'versus';
+    G.classicSide = other(setup.fusionSide);
+    G.mode = 'balanced';
+    G.rules = allRules(true);
+  } else {
+    G.gameMode = 'fusion';
+    G.classicSide = null;
+    G.mode = setup.mode;
+    G.rules = rulesFor(setup);          // regras ativas valem até a próxima "Nova partida"
+  }
+  closeModal('modal-promotion');
+  initGame();
+}
+
+function resetGame() {
+  startGame();
+  playSound('move');
+}
+
+function flipBoard() { G.flipped = !G.flipped; render(); }
+
+function undo() {
+  if (!snapshots.length || G.promo || bothAiControlled() || NET.on) return;   // IA vs IA: use Pausar/Próxima jogada
+  cancelAi();                      // cancela qualquer busca em andamento (termina o Worker)
+  // Contra a IA, volta até a vez do jogador (desfaz o lance dele e a resposta da IA)
+  do {
+    const s = snapshots.pop();
+    Object.assign(G, {
+      board: s.board, turn: s.turn, captured: s.captured, history: s.history, last: s.last, cast: s.cast, ep: s.ep,
+      selected: null, legal: [], fx: null, over: false, result: null, thinking: false
+    });
+  } while (G.ai && G.ai[G.turn] && snapshots.length);
+  G.frames.length = G.history.length + 1;
+  G.viewIndex = G.frames.length - 1;
+  stopAutoplay();
+  closeModal('modal-gameover');
+  playSound('move');
+  render();
+  maybeAiMove();
+}
+
+/* ==========================================================
+   5. Regras: fusão e movimentos
+   ========================================================== */
+/* Só o lado Fusion funde; no modo Clássico vs Fusion o lado clássico joga o xadrez normal */
+const canFuse = (color) => G.classicSide !== color;
+
+function canMerge(source, target) {
+  if (source.length !== 1 || target.length !== 1) return false;   // híbridos não fundem de novo
+  const a = source[0], b = target[0];
+  if (a.color !== b.color) return false;                          // só peças da mesma cor
+  if (!canFuse(a.color)) return false;                            // lado clássico não funde
+  if (a.type === 'king' || b.type === 'king') return false;       // rei não funde
+  if (pairForbidden(a.type, b.type)) return false;                // duplas proibidas pelas regras ativas
+  return true;
+}
+
+/* Duplas que não podem se fundir (só se a regra estiver ativa) */
+function pairForbidden(t1, t2) {
+  const R = G.rules;
+  const pair = (x, y) => (t1 === x && t2 === y) || (t1 === y && t2 === x);
+  if (R.noKnightQueen && pair('knight', 'queen')) return true;
+  if (R.noRookBishop && pair('rook', 'bishop')) return true;
+  return false;
+}
+
+/* Pausa entre fusões: se a última jogada do jogador foi uma fusão, a próxima não pode ser.
+   Deriva do histórico real, então Desfazer e Nova partida funcionam sem estado extra. */
+function mergeBlocked(color) {
+  if (!G.rules.cooldown) return false;
+  for (let i = G.history.length - 1; i >= 0; i--) {
+    if (G.history[i].color === color) return G.history[i].kind === 'merge';
+  }
+  return false;
+}
+
+/* Promoção: com as regras ativas, o peão não vira a mesma peça com a qual está fundido
+   nem forma uma dupla proibida (Cavalo + Rainha, Torre + Bispo). */
+const PROMO_TYPES = ['queen', 'rook', 'bishop', 'knight'];
+function promoBlock(partnerType, type) {
+  if (!partnerType) return null;
+  if (G.rules.promoDiff && partnerType === type) return 'same';
+  if (pairForbidden(partnerType, type)) return 'ban';
+  return null;
+}
+const promoOptions = (partnerType) => PROMO_TYPES.filter((t) => !promoBlock(partnerType, t));
+
+/* ---------- Roque e en passant ----------
+   Roque (todos os modos): Rei e Torre precisam estar PUROS (nenhum fundido), nunca ter se mexido, caminho livre,
+   Rei fora de xeque e sem passar nem pousar em casa atacada. A unidade fundida nunca roca.
+   En passant (só Clássico vs Fusion): quem captura é o lado clássico, e só contra um peão SIMPLES (não fundido)
+   do lado Fusion que acabou de avançar 2 casas. Um Peão+Bispo que avança 2 casas não pode ser capturado assim.
+   Estado fora do tabuleiro ("ex"): { cast: {wK,wQ,bK,bQ}, ep: {r,c,vr,vc}|null, epBy: cor|null }.
+   O jogo real guarda isso em G.cast / G.ep (e nos snapshots); a IA carrega uma cópia própria na busca. */
+function freshCast() { return { wK: true, wQ: true, bK: true, bQ: true }; }
+const CASTLE_TOUCH = { 56: ['wQ'], 63: ['wK'], 60: ['wK', 'wQ'], 0: ['bQ'], 7: ['bK'], 4: ['bK', 'bQ'] };   // índice = linha*8 + coluna
+/* Atualiza o estado depois de um lance: qualquer lance que saia de, ou chegue a, a1/h1/e1/a8/h8/e8 revoga o direito
+   correspondente (cobre Rei movido, Torre movida, Torre capturada e Torre fundida). */
+function exStep(ex, fr, fc, r, c, unit, destLen) {
+  for (const sq of [fr * 8 + fc, r * 8 + c]) {
+    const keys = CASTLE_TOUCH[sq];
+    if (keys) for (const k of keys) ex.cast[k] = false;
+  }
+  ex.ep = (unit.length === 1 && unit[0].type === 'pawn' && c === fc && Math.abs(r - fr) === 2 && !destLen)
+    ? { r: (fr + r) / 2, c, vr: r, vc: c } : null;
+}
+const liveEx = () => ({ cast: G.cast, ep: G.ep, epBy: G.classicSide });
+const isPure = (cell, type, color) => cell.length === 1 && cell[0].type === type && cell[0].color === color;
+
+function castleMoves(b, r, c, color, ex) {
+  const hr = color === 'white' ? 7 : 0;
+  if (!ex || r !== hr || c !== 4 || !isPure(b[hr][4], 'king', color)) return [];
+  const enemy = other(color), p = color === 'white' ? 'w' : 'b';
+  const sides = [
+    { k: 'K', rc: 7, to: 6, empty: [5, 6], pass: [5, 6] },
+    { k: 'Q', rc: 0, to: 2, empty: [1, 2, 3], pass: [3, 2] }
+  ];
+  const out = [];
+  let inCheck = null;
+  for (const sd of sides) {
+    if (!ex.cast[p + sd.k] || !isPure(b[hr][sd.rc], 'rook', color)) continue;
+    if (sd.empty.some((cc) => b[hr][cc].length)) continue;
+    if (inCheck === null) inCheck = attacksSquare(b, hr, 4, enemy);
+    if (inCheck) return [];
+    if (sd.pass.some((cc) => attacksSquare(b, hr, cc, enemy))) continue;
+    out.push({ r: hr, c: sd.to, moveType: 'castle' });
+  }
+  return out;
+}
+function epMoves(b, r, c, color, ex) {
+  if (!ex || !ex.ep || ex.epBy !== color || !isPure(b[r][c], 'pawn', color)) return [];
+  const { r: tr, c: tc, vr, vc } = ex.ep;
+  if (tr !== r + (color === 'white' ? -1 : 1) || Math.abs(tc - c) !== 1 || b[tr][tc].length) return [];
+  if (!isPure(b[vr][vc], 'pawn', other(color))) return [];
+  return [{ r: tr, c: tc, moveType: 'capture', ep: true }];
+}
+
+function getPseudoMoves(b, r, c, noMerge = false) {
+  const cell = b[r][c];
+  if (!cell.length) return [];
+  const color = cell[0].color;
+  const targets = [];
+
+  // A unidade se move com a soma dos movimentos de todas as suas peças
+  cell.forEach(({ type }) => {
+    if (type === 'pawn') {
+      const dir = color === 'white' ? -1 : 1;
+      const startRow = color === 'white' ? 6 : 1;
+      const one = r + dir, two = r + 2 * dir;
+      const free = (rr) => b[rr][c].length === 0 || (b[rr][c][0].color === color && canMerge(cell, b[rr][c]));
+
+      if (inBounds(one, c) && free(one)) targets.push({ r: one, c });
+      if (r === startRow && b[one][c].length === 0 && free(two)) targets.push({ r: two, c });
+      [-1, 1].forEach((dc) => {
+        const cc = c + dc;
+        if (inBounds(one, cc) && b[one][cc].length && b[one][cc][0].color !== color) targets.push({ r: one, c: cc });
+      });
+    } else if (type === 'knight' || type === 'king') {
+      const steps = type === 'knight'
+        ? [[-2, -1], [-2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2], [2, -1], [2, 1]]
+        : [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];
+      steps.forEach(([dr, dc]) => {
+        if (inBounds(r + dr, c + dc)) targets.push({ r: r + dr, c: c + dc });
+      });
+    } else {
+      const dirs = [];
+      if (type === 'rook' || type === 'queen') dirs.push([-1, 0], [1, 0], [0, -1], [0, 1]);
+      if (type === 'bishop' || type === 'queen') dirs.push([-1, -1], [-1, 1], [1, -1], [1, 1]);
+      dirs.forEach(([dr, dc]) => {
+        let nr = r + dr, nc = c + dc;
+        while (inBounds(nr, nc)) {
+          targets.push({ r: nr, c: nc });
+          if (b[nr][nc].length) break;
+          nr += dr; nc += dc;
+        }
+      });
+    }
+  });
+
+  const unique = new Map();
+  targets.forEach(({ r: tr, c: tc }) => {
+    const dest = b[tr][tc];
+    let moveType = null;
+    if (!dest.length) moveType = 'normal';
+    else if (dest[0].color !== color) moveType = 'capture';
+    else if (!noMerge && canMerge(cell, dest)) moveType = 'merge';
+    if (moveType) unique.set(`${tr},${tc}`, { r: tr, c: tc, moveType });
+  });
+  return [...unique.values()];
+}
+
+function findKing(b, color) {
+  for (let r = 0; r < 8; r++)
+    for (let c = 0; c < 8; c++)
+      if (b[r][c].some((p) => p.type === 'king' && p.color === color)) return { r, c };
+  return null;
+}
+
+/* Detecta ataque a partir da casa alvo, sem gerar todos os lances inimigos.
+   Uma unidade ataca com a soma dos movimentos das suas peças. */
+const KNIGHT_JUMPS = [[-2, -1], [-2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2], [2, -1], [2, 1]];
+const KING_STEPS = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];
+const ORTHO = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+const DIAG = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+
+function hasType(cell, by, t1, t2) {
+  if (!cell.length || cell[0].color !== by) return false;
+  for (let i = 0; i < cell.length; i++) {
+    const t = cell[i].type;
+    if (t === t1 || t === t2) return true;
+  }
+  return false;
+}
+
+function attacksSquare(b, r, c, by) {
+  const pr = r + (by === 'white' ? 1 : -1);          // linha de onde um peão de `by` ataca (r, c)
+  if (pr >= 0 && pr < 8) {
+    if (c > 0 && hasType(b[pr][c - 1], by, 'pawn')) return true;
+    if (c < 7 && hasType(b[pr][c + 1], by, 'pawn')) return true;
+  }
+  for (const [dr, dc] of KNIGHT_JUMPS) {
+    const nr = r + dr, nc = c + dc;
+    if (inBounds(nr, nc) && hasType(b[nr][nc], by, 'knight')) return true;
+  }
+  for (const [dr, dc] of KING_STEPS) {
+    const nr = r + dr, nc = c + dc;
+    if (inBounds(nr, nc) && hasType(b[nr][nc], by, 'king')) return true;
+  }
+  for (const [dr, dc] of ORTHO) {
+    let nr = r + dr, nc = c + dc;
+    while (inBounds(nr, nc)) {
+      const cell = b[nr][nc];
+      if (cell.length) { if (hasType(cell, by, 'rook', 'queen')) return true; break; }
+      nr += dr; nc += dc;
+    }
+  }
+  for (const [dr, dc] of DIAG) {
+    let nr = r + dr, nc = c + dc;
+    while (inBounds(nr, nc)) {
+      const cell = b[nr][nc];
+      if (cell.length) { if (hasType(cell, by, 'bishop', 'queen')) return true; break; }
+      nr += dr; nc += dc;
+    }
+  }
+  return false;
+}
+
+function isKingInCheck(b, color) {
+  const king = findKing(b, color);
+  return !!king && attacksSquare(b, king.r, king.c, other(color));
+}
+
+/* Lances legais de uma unidade. Testa cada lance no próprio tabuleiro e desfaz (sem clonar). */
+function legalMovesFrom(b, r, c, kingPos, capturesOnly = false, noMerge = false, ex = null) {
+  const unit = b[r][c];
+  const color = unit[0].color, enemy = other(color);
+  const king = kingPos || findKing(b, color);
+  const carriesKing = unit.some((p) => p.type === 'king');
+  const out = [];
+
+  for (const m of getPseudoMoves(b, r, c, noMerge)) {
+    if (capturesOnly && m.moveType !== 'capture') continue;
+    const prev = b[m.r][m.c];
+    b[r][c] = [];
+    b[m.r][m.c] = m.moveType === 'capture' ? unit : prev.concat(unit);
+    const at = carriesKing ? m : king;
+    const safe = !at || !attacksSquare(b, at.r, at.c, enemy);
+    b[r][c] = unit;
+    b[m.r][m.c] = prev;
+    if (safe) out.push(m);
+  }
+
+  if (ex) {
+    // En passant: testa o lance com a vítima removida (xeque descoberto pela fileira)
+    for (const m of epMoves(b, r, c, color, ex)) {
+      const { vr, vc } = ex.ep, victim = b[vr][vc], tprev = b[m.r][m.c];
+      b[r][c] = []; b[m.r][m.c] = unit; b[vr][vc] = [];
+      const safe = !king || !attacksSquare(b, king.r, king.c, enemy);
+      b[r][c] = unit; b[m.r][m.c] = tprev; b[vr][vc] = victim;
+      if (safe) out.push(m);
+    }
+    // Roque: a segurança do Rei (origem, casa de passagem e destino) já é verificada em castleMoves
+    if (!capturesOnly) out.push(...castleMoves(b, r, c, color, ex));
+  }
+  return out;
+}
+
+function getLegalMoves(r, c) {
+  const unit = G.board[r][c];
+  return legalMovesFrom(G.board, r, c, null, false, mergeBlocked(unit[0].color), liveEx());
+}
+
+function hasAnyLegalMove(color) {
+  for (let r = 0; r < 8; r++)
+    for (let c = 0; c < 8; c++)
+      if (G.board[r][c].length && G.board[r][c][0].color === color && getLegalMoves(r, c).length) return true;
+  return false;
+}
+
+/* ==========================================================
+   6. Jogada
+   ========================================================== */
+function executeMove(from, to) {
+  snapshots.push(snapshot());
+
+  const unit = [...G.board[from.r][from.c]];
+  G.board[from.r][from.c] = [];
+
+  const dest = G.board[to.r][to.c];
+  const destLen = dest.length;
+  let kind = 'move', into = null, taken = null, castle = null, ep = false, rook = null;
+  const pure = unit.length === 1;
+
+  if (pure && unit[0].type === 'king' && from.r === to.r && Math.abs(to.c - from.c) === 2) {
+    // Roque: o Rei anda 2 casas e a Torre pula para o outro lado dele
+    kind = 'castle';
+    castle = to.c > from.c ? 'K' : 'Q';
+    const rf = castle === 'K' ? 7 : 0, rt = castle === 'K' ? 5 : 3;
+    G.board[from.r][rt] = G.board[from.r][rf];
+    G.board[from.r][rf] = [];
+    rook = { from: { r: from.r, c: rf }, to: { r: from.r, c: rt } };
+  } else if (pure && unit[0].type === 'pawn' && from.c !== to.c && !destLen) {
+    // En passant: diagonal para casa vazia; a vítima está na fileira de origem, na coluna de destino
+    kind = 'capture'; ep = true;
+    const victim = G.board[from.r][to.c];
+    taken = victim.map((p) => p.type);
+    G.captured[G.turn].push(...victim);
+    G.board[from.r][to.c] = [];
+  } else if (dest.length && dest[0].color !== G.turn) {
+    kind = 'capture';
+    taken = dest.map((p) => p.type);
+    G.captured[G.turn].push(...dest);
+    G.board[to.r][to.c] = [];
+  } else if (dest.length) {
+    kind = 'merge';
+    into = dest[0].type;
+  }
+  G.board[to.r][to.c].push(...unit);
+
+  G.history.push({ color: G.turn, pieces: unit.map((p) => p.type), from: sqName(from.r, from.c), to: sqName(to.r, to.c), kind, into, taken, castle, ep });
+  exStep(G, from.r, from.c, to.r, to.c, unit, destLen);     // direitos de roque e casa de en passant
+  G.last = { from, to };
+  G.fx = { from, to, kind, rook };
+  G.selected = null; G.legal = [];
+
+  playSound(kind === 'merge' ? 'merge' : kind === 'capture' ? 'capture' : 'move');
+
+  // Promoção: só a metade "peão" da unidade é promovida
+  const promoRank = G.turn === 'white' ? 0 : 7;
+  const idx = G.board[to.r][to.c].findIndex((p) => p.type === 'pawn');
+  if (idx !== -1 && to.r === promoRank) {
+    G.promo = { r: to.r, c: to.c, idx };
+    if (G.ai && G.ai[G.turn]) {                   // a IA promove sozinha
+      const partner = G.board[to.r][to.c].find((_, i) => i !== idx);
+      finishPromotion(promoOptions(partner && partner.type)[0]);   // melhor opção permitida (Rainha > Torre > Bispo > Cavalo)
+      return;
+    }
+    if (NET.applying) return;                     // lance remoto: netApplyMove conclui a promoção com a peça validada
+    render();
+    openPromotion();
+    return;
+  }
+  completeTurn();
+}
+
+function completeTurn() {
+  if (NET.on && NET.conn && !NET.applying && G.turn === NET.color) {
+    const h = G.history[G.history.length - 1];
+    netSendMove(h);
+  }
+  pushFrame();
+  G.viewIndex = G.frames.length - 1;
+  G.turn = other(G.turn);
+  const inCheck = isKingInCheck(G.board, G.turn);
+  const canMove = hasAnyLegalMove(G.turn);
+  const lastEntry = G.history[G.history.length - 1];
+
+  if (inCheck && !canMove) {
+    const winner = other(G.turn);
+    G.over = true; G.result = { winner };
+    lastEntry.check = '#';
+    playSound('win');
+    const desc = !G.ai ? `${SIDE_NAME[winner]} won the game.`
+      : !G.ai[winner] ? 'You won the game.'
+      : bothAiControlled() ? `${sideDisplayName(winner)} won the game.`
+      : `The ${AI_LEVELS[G.ai[winner]].label} won the game.`;
+    showGameOver(winner, 'Checkmate', desc);
+  } else if (!inCheck && !canMove) {
+    G.over = true; G.result = { winner: null, reason: 'stalemate' };
+    showGameOver(null, 'Draw by stalemate', 'The player to move has no legal moves.');
+  } else if (insufficientMaterial(G.board)) {
+    G.over = true; G.result = { winner: null, reason: 'insufficient' };
+    playSound('win');
+    showGameOver(null, 'Draw by insufficient material', 'Neither side has enough pieces left to deliver checkmate.');
+  } else if (countRepetitions() >= 3) {
+    // Corta loops infinitos de xeque/perseguição: mesma posição pela 3ª vez encerra a partida
+    G.over = true; G.result = { winner: null, reason: 'repetition' };
+    if (inCheck) lastEntry.check = '+';
+    playSound('win');
+    showGameOver(null, 'Draw by repetition', 'The same position has occurred three times.');
+  } else if (halfmoveClock() >= 100) {
+    G.over = true; G.result = { winner: null, reason: 'fifty-move' };
+    if (inCheck) lastEntry.check = '+';
+    playSound('win');
+    showGameOver(null, 'Draw by the 50-move rule', '50 moves have passed for each side with no capture, fusion, or pawn move.');
+  } else if (inCheck) {
+    lastEntry.check = '+';
+    playSound('check');
+  }
+  render();
+  maybeAiMove();
+}
+
+/* ==========================================================
+   7. Renderização
+   ========================================================== */
+function render() {
+  const focused = document.activeElement && document.activeElement.dataset && document.activeElement.dataset.r;
+  const focusKey = focused ? `${document.activeElement.dataset.r},${document.activeElement.dataset.c}` : null;
+
+  renderBoard(focusKey);
+  renderTags();
+  renderStatus();
+  renderHistory();
+  renderMode();
+  const bothAi = bothAiControlled();
+  const reviewing = isReviewing();
+  $('btn-undo').disabled = NET.on || !snapshots.length || !!G.promo || bothAi || reviewing;
+  $('btn-back').disabled = G.viewIndex <= 0 || !!G.promo;
+  $('btn-resume').hidden = !reviewing || G.over;
+  $('btn-ai-pause').hidden = !bothAi;
+  $('btn-ai-step').hidden = !bothAi;
+  if (bothAi) {
+    $('btn-ai-pause').textContent = G.aiPaused ? 'Resume' : 'Pause';
+    $('btn-ai-pause').disabled = G.over;
+    $('btn-ai-step').disabled = G.over || !!G.promo || !G.aiPaused;
+  }
+
+  const showReviewBar = G.over && G.frames.length > 1;
+  $('review-bar').hidden = !showReviewBar;
+  if (showReviewBar) {
+    $('btn-review-back').disabled = G.viewIndex <= 0;
+    $('btn-review-forward').disabled = G.viewIndex >= G.frames.length - 1;
+    $('btn-review-play').disabled = false;
+    $('review-play-icon').innerHTML = G.autoplay
+      ? '<rect x="4" y="3" width="3" height="10"/><rect x="9" y="3" width="3" height="10"/>'
+      : '<path d="M5 3 L13 8 L5 13 Z"/>';
+    $('btn-review-play').title = G.autoplay ? 'Pause' : 'Play';
+    $('review-pos').textContent = `Move ${G.viewIndex} / ${G.frames.length - 1}`;
+  }
+}
+
+function toggleAiPause() {
+  if (!bothAiControlled() || G.over) return;
+  G.aiPaused = !G.aiPaused;
+  render();
+  if (!G.aiPaused) maybeAiMove();
+}
+function aiStep() {
+  if (!bothAiControlled() || G.over || G.promo || !G.aiPaused) return;
+  maybeAiMove(true);
+}
+
+/* Etiqueta do modo de regras e nota do painel lateral */
+const activeRuleCount = () => RULE_DEFS.filter((d) => G.rules[d.key]).length;
+function renderMode() {
+  const chip = $('mode-chip');
+  const versus = G.gameMode === 'versus';
+  chip.dataset.mode = versus ? 'versus' : G.mode;
+  chip.innerHTML = versus
+    ? `Classic vs Fusion<small>Fusion: ${SIDE_NAME[other(G.classicSide)]}</small>`
+    : `${MODE_LABEL[G.mode]}<small>${activeRuleCount()} of ${RULE_DEFS.length} rules</small>`;
+  $('fusion-note-text').innerHTML = (versus
+    ? `<strong>Classic vs Fusion</strong>: ${SIDE_NAME[G.classicSide]} plays regular chess, with no fusions. ${SIDE_NAME[other(G.classicSide)]} can move a piece onto another of their own to fuse them. The classic side also has en passant (against unfused pawns); both sides can castle with a pure King and Rook.`
+    : '<strong>Rook + Knight</strong> move as a single unit: in straight lines and in an L. Move a piece onto another of yours to fuse them.')
+    + (G.rules.cooldown ? ' After a fusion, the next move cannot be a fusion.' : '')
+    + (versus ? '' : ' Castling is allowed only with a pure (unfused) King and Rook.');
+}
+
+function renderBoard(focusKey) {
+  const el = $('board');
+  const reviewing = isReviewing();
+  const frame = reviewing ? G.frames[G.viewIndex] : null;
+  const board = reviewing ? frame.board : G.board;
+  const lastMove = reviewing ? frame.last : G.last;
+  const checkColor = reviewing ? frame.turnToMove : G.turn;
+  const inCheck = isKingInCheck(board, checkColor);
+  const legal = reviewing ? new Map() : new Map(G.legal.map((m) => [`${m.r},${m.c}`, m]));
+  const selected = reviewing ? null : G.selected;
+  const vr = (r) => (G.flipped ? 7 - r : r);
+  const vc = (c) => (G.flipped ? 7 - c : c);
+  const frag = document.createDocumentFragment();
+  let toFocus = null;
+
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      const r = G.flipped ? 7 - row : row;
+      const c = G.flipped ? 7 - col : col;
+      const cell = board[r][c];
+      const dark = (r + c) % 2 === 1;
+
+      const sq = document.createElement('button');
+      sq.type = 'button';
+      sq.className = `sq ${dark ? 'd' : 'l'}`;
+      sq.dataset.r = r; sq.dataset.c = c;
+      sq.setAttribute('aria-label', `${sqName(r, c)}${cell.length ? ', ' + cell.map(pieceLabel).join(' fused with ') : ', empty'}`);
+
+      if (lastMove && ((lastMove.from.r === r && lastMove.from.c === c) || (lastMove.to.r === r && lastMove.to.c === c))) sq.classList.add('last');
+      if (selected && selected.r === r && selected.c === c) sq.classList.add('sel');
+      if (inCheck && cell.some((p) => p.type === 'king' && p.color === checkColor)) sq.classList.add('check');
+      if (!reviewing && G.fx && G.fx.to.r === r && G.fx.to.c === c && G.fx.kind !== 'move') sq.classList.add(`fx-${G.fx.kind}`);
+
+      if (col === 0) sq.insertAdjacentHTML('beforeend', `<span class="co rank">${8 - r}</span>`);
+      if (row === 7) sq.insertAdjacentHTML('beforeend', `<span class="co file">${FILES[c]}</span>`);
+
+      const mv = legal.get(`${r},${c}`);
+      if (mv) sq.insertAdjacentHTML('beforeend', `<i class="mk ${mv.moveType === 'normal' ? 'move' : mv.moveType}"></i>`);
+
+      if (cell.length) {
+        const piece = document.createElement('div');
+        piece.className = 'piece';
+        piece.innerHTML = unitHTML(cell.map((p) => p.type), cell[0].color);
+        if (!reviewing && G.fx && G.fx.to.r === r && G.fx.to.c === c) {
+          piece.classList.add('slide');
+          piece.style.setProperty('--dx', `${(vc(G.fx.from.c) - vc(c)) * 100}%`);
+          piece.style.setProperty('--dy', `${(vr(G.fx.from.r) - vr(r)) * 100}%`);
+        } else if (!reviewing && G.fx && G.fx.rook && G.fx.rook.to.r === r && G.fx.rook.to.c === c) {
+          piece.classList.add('slide');                 // a Torre do roque também desliza
+          piece.style.setProperty('--dx', `${(vc(G.fx.rook.from.c) - vc(c)) * 100}%`);
+          piece.style.setProperty('--dy', `${(vr(G.fx.rook.from.r) - vr(r)) * 100}%`);
+        }
+        sq.appendChild(piece);
+      }
+
+      sq.addEventListener('click', () => onSquare(r, c));
+      if (focusKey === `${r},${c}`) toFocus = sq;
+      frag.appendChild(sq);
+    }
+  }
+  el.replaceChildren(frag);
+  G.fx = null;
+  if (toFocus) toFocus.focus({ preventScroll: true });
+}
+
+function renderTags() {
+  const topColor = G.flipped ? 'white' : 'black';
+  fillTag($('tag-top'), topColor);
+  fillTag($('tag-bottom'), other(topColor));
+}
+
+function fillTag(el, color) {
+  const reviewing = isReviewing();
+  const frame = reviewing ? G.frames[G.viewIndex] : null;
+  const active = !reviewing && !G.over && G.turn === color;
+  el.className = `tag${active ? ' active' : ''}`;
+  const board = reviewing ? frame.board : G.board;
+  const checked = reviewing
+    ? frame.turnToMove === color && isKingInCheck(board, color)
+    : active && isKingInCheck(board, color);
+  const captured = reviewing ? frame.captured : G.captured;
+  const caps = [...captured[color]].sort((a, b) => VALUE[b.type] - VALUE[a.type]);
+  const isAi = !!G.ai && !!G.ai[color];
+  const role = !G.ai ? (NET.on && NET.color === color ? 'You' : '') : (isAi ? AI_LEVELS[G.ai[color]].label : 'You');
+  const noFusion = active && !G.promo && mergeBlocked(color);
+  const kind = G.classicSide ? (color === G.classicSide ? 'classic' : 'fusion') : '';
+  const state = reviewing ? '' : (checked ? 'in check' : (active ? (isAi && G.thinking ? 'thinking…' : (noFusion ? 'playing · no fusion' : 'playing')) : ''));
+  el.innerHTML = `
+    <span class="dot ${color === 'white' ? 'w' : 'b'}"></span>
+    <span class="name">${SIDE_NAME[color]}</span>
+    ${role ? `<span class="role">${role}</span>` : ''}
+    ${kind ? `<span class="role ${kind}">${kind === 'classic' ? 'Classic' : 'Fusion'}</span>` : ''}
+    <span class="state${checked ? ' alert' : ''}">${state}</span>
+    <span class="tray${caps.length ? ' has' : ''}" title="Captured pieces">${caps.map((p) => pieceSVG(p.type, p.color)).join('')}</span>`;
+}
+
+function renderStatus() {
+  const title = $('status-title'), sub = $('status-sub');
+  sub.classList.remove('alert');
+
+  if (isReviewing()) {
+    title.textContent = 'Match review';
+    sub.innerHTML = `Move ${G.viewIndex} of ${G.frames.length - 1} <button type="button" class="btn mini" onclick="reviewJumpLive()">${G.over ? 'Go to result' : 'Back to current'}</button>`;
+    return;
+  }
+
+  if (G.over) {
+    if (G.result.reason === 'resignation') {
+      title.textContent = `${SIDE_NAME[G.result.winner]} wins`;
+      sub.textContent = `${SIDE_NAME[other(G.result.winner)]} resigned. Start a new game.`;
+    } else if (G.result.winner) {
+      title.textContent = `${SIDE_NAME[G.result.winner]} wins`;
+      sub.textContent = bothAiControlled() ? 'Checkmate. Start a new game.' : 'Checkmate. Use Undo or start a new game.';
+    } else {
+      title.textContent = 'Draw';
+      sub.textContent = ({ stalemate: 'Stalemate: no legal moves.', repetition: 'Same position three times.', 'fifty-move': 'The 50-move rule.',
+        insufficient: 'Insufficient material to checkmate.' })[G.result.reason] || 'Draw.';
+    }
+    return;
+  }
+  title.textContent = `${SIDE_NAME[G.turn]}'s turn`;
+  if (isKingInCheck(G.board, G.turn)) {
+    sub.textContent = isAiTurn() ? "The AI's king is in check." : 'Your king is in check.';
+    sub.classList.add('alert');
+  } else if (G.thinking) {
+    sub.textContent = 'The AI is thinking…';
+  } else if (G.promo) {
+    sub.textContent = 'Choose the promotion piece.';
+  } else if (G.selected) {
+    sub.textContent = G.legal.length
+      ? (!canFuse(G.turn)
+        ? 'Dot: move. Red ring: capture. Dashed ring: castle. Classic chess: no fusion.'
+        : mergeBlocked(G.turn)
+        ? 'Dot: move. Red ring: capture. Fusion blocked this turn.'
+        : 'Dot: move. Red ring: capture. Violet ring: fuse.')
+      : 'This piece has no legal moves right now.';
+  } else if (mergeBlocked(G.turn)) {
+    sub.textContent = `${SIDE_NAME[G.turn]} fused on the previous move: now they can only move or capture.`;
+  } else {
+    sub.textContent = 'Tap a piece to see its moves.';
+  }
+}
+
+function renderHistory() {
+  const list = $('history');
+  $('move-count').textContent = G.history.length;
+  $('btn-copy').disabled = !G.history.length;
+  if (!G.history.length) {
+    list.innerHTML = `<li class="empty">Moves will appear here.</li>`;
+    return;
+  }
+  const cell = (h, isNew) => {
+    if (!h) return '<span class="mv"></span>';
+    const sym = h.kind === 'merge' ? '<span class="sym fuse" aria-label="fused with">+</span>' : h.kind === 'capture' ? '<span class="sym cap">×</span>' : '<span class="sym">→</span>';
+    const extra = h.kind === 'merge' ? chipHTML([h.into], h.color)
+      : h.kind === 'capture' ? chipHTML(h.taken, other(h.color)) + (h.ep ? '<span class="sym">e.p.</span>' : '')
+      : h.kind === 'castle' ? `<span class="sym">${h.castle === 'K' ? 'O-O' : 'O-O-O'}</span>` : '';
+    const promo = h.promo ? `<span class="sym fuse">=</span>${chipHTML([h.promo], h.color)}` : '';
+    return `<span class="mv${isNew ? ' new' : ''}">${chipHTML(h.pieces, h.color)}<span>${h.from}</span>${sym}<span>${h.to}</span>${extra}${promo}${h.check ? `<span class="sym cap">${h.check}</span>` : ''}</span>`;
+  };
+  let html = '';
+  const lastIdx = G.history.length - 1;
+  for (let i = 0; i < G.history.length; i += 2) {
+    html += `<li><span class="n">${i / 2 + 1}</span>${cell(G.history[i], i === lastIdx)}${cell(G.history[i + 1], i + 1 === lastIdx)}</li>`;
+  }
+  list.innerHTML = html;
+  list.scrollTop = list.scrollHeight;
+}
+
+/* ==========================================================
+   7b. Copiar histórico (texto)
+   ========================================================== */
+const unitName = (types) => types.map((t) => NAMES[t]).join(' + ');
+
+/* Descreve uma jogada em texto: qual peça (ou unidade fundida) andou, o que foi fundido ou capturado */
+function describeMove(h) {
+  const isUnit = h.pieces.length > 1;
+  const who = isUnit ? `${unitName(h.pieces)} (fused unit)` : NAMES[h.pieces[0]];
+  let s;
+
+  if (h.kind === 'castle') {
+    const rank = h.color === 'white' ? 1 : 8, king = h.castle === 'K';
+    s = `CASTLING ${king ? 'kingside (O-O)' : 'queenside (O-O-O)'}: King ${h.from} → ${h.to}, Rook ${king ? 'h' : 'a'}${rank} → ${king ? 'f' : 'd'}${rank}`;
+  } else if (h.kind === 'merge') {
+    s = `FUSION: ${NAMES[h.pieces[0]]} ${h.from} fused with ${NAMES[h.into]} ${h.to} → unit ${NAMES[h.into]} + ${NAMES[h.pieces[0]]} at ${h.to}`;
+  } else if (h.kind === 'capture') {
+    s = `${who} ${h.from} × ${h.to} (captured ${h.taken.length > 1 ? `unit ${unitName(h.taken)}` : NAMES[h.taken[0]]}${h.ep ? ', en passant' : ''})`;
+  } else {
+    s = `${who} ${h.from} → ${h.to}`;
+  }
+
+  if (h.promo) {
+    let done = false;
+    const after = h.pieces.map((t) => (!done && t === 'pawn' ? (done = true, h.promo) : t));
+    s += ` | Promotion: Pawn → ${NAMES[h.promo]}${after.length > 1 ? ` (unit now: ${unitName(after)})` : ''}`;
+  }
+  if (h.check === '#') s += ' | checkmate';
+  else if (h.check === '+') s += ' | check';
+  return s;
+}
+
+function historyText() {
+  const lines = [];
+  const you = G.ai ? `${sideDisplayName('white')} vs ${sideDisplayName('black')}` : 'White vs Black (two players)';
+  const drawLabel = { stalemate: 'draw by stalemate', repetition: 'draw by repetition', 'fifty-move': 'draw by the 50-move rule', insufficient: 'draw by insufficient material' };
+  const status = !G.over ? 'in progress'
+    : G.result.reason === 'resignation' ? `${SIDE_NAME[G.result.winner]} won by resignation (${SIDE_NAME[other(G.result.winner)]} resigned)`
+    : G.result.winner ? `checkmate, ${SIDE_NAME[G.result.winner]} won` : (drawLabel[G.result.reason] || 'draw');
+
+  lines.push('FUSION CHESS: game history');
+  lines.push(`Game: ${you}`);
+  if (G.gameMode === 'versus') lines.push(`Mode: Classic vs Fusion (${SIDE_NAME[G.classicSide]} plays classic, ${SIDE_NAME[other(G.classicSide)]} plays Fusion)`);
+  const active = RULE_DEFS.filter((d) => G.rules[d.key]).map((d) => d.title);
+  lines.push(`Rules: ${MODE_LABEL[G.mode]} (${active.length ? `active: ${active.join(', ')}` : 'no optional rules active'})`);
+  lines.push(`Status: ${status}`);
+  lines.push('');
+  lines.push('MOVES');
+
+  for (let i = 0; i < G.history.length; i += 2) {
+    const n = i / 2 + 1;
+    const a = G.history[i], b = G.history[i + 1];
+    lines.push(`${n}. ${SIDE_NAME[a.color]}: ${describeMove(a)}`);
+    if (b) lines.push(`${' '.repeat(String(n).length + 2)}${SIDE_NAME[b.color]}: ${describeMove(b)}`);
+  }
+
+  // Resumo das fusões de cada lado
+  const merges = G.history
+    .map((h, i) => ({ h, n: Math.floor(i / 2) + 1 }))
+    .filter(({ h }) => h.kind === 'merge');
+  lines.push('');
+  lines.push('FUSIONS');
+  if (!merges.length) {
+    lines.push('No fusions so far.');
+  } else {
+    ['white', 'black'].forEach((color) => {
+      const mine = merges.filter(({ h }) => h.color === color);
+      lines.push(`${SIDE_NAME[color]}: ${mine.length
+        ? mine.map(({ h, n }) => `${NAMES[h.into]} + ${NAMES[h.pieces[0]]} at ${h.to} (move ${n})`).join('; ')
+        : 'none'}`);
+    });
+  }
+  return lines.join('\n');
+}
+
+async function writeClipboard(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* tenta o método antigo */ }
+  }
+  // Alternativa para arquivos abertos localmente ou navegadores sem a API de área de transferência
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.setAttribute('readonly', '');
+  ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;user-select:text;-webkit-user-select:text;';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select(); ta.setSelectionRange(0, text.length);
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+  ta.remove();
+  return ok;
+}
+
+let copyTimer = null;
+async function copyHistory() {
+  if (!G.history.length && !G.over) return;
+  const ok = await writeClipboard(historyText());
+  const msg = ok ? 'Copied!' : 'Could not copy';
+  const side = { btn: $('btn-copy'), label: $('copy-label'), idle: 'Copy' };
+  const over = { btn: $('btn-copy-over'), label: $('btn-copy-over'), idle: 'Copy game history' };
+  [side, over].forEach(({ btn, label, idle }) => {
+    if (!btn) return;
+    label.textContent = msg;
+    btn.classList.toggle('done', ok);
+    btn.classList.toggle('fail', !ok);
+  });
+  const status = ok ? 'History copied to the clipboard.' : msg;
+  $('copy-status').textContent = status;
+  $('copy-over-status').textContent = status;
+  clearTimeout(copyTimer);
+  copyTimer = setTimeout(() => {
+    [side, over].forEach(({ btn, label, idle }) => { label.textContent = idle; btn.classList.remove('done', 'fail'); });
+    $('copy-status').textContent = '';
+    $('copy-over-status').textContent = '';
+  }, 1800);
+}
+
+/* ==========================================================
+   8. Interação
+   ========================================================== */
+function onSquare(r, c) {
+  if (G.over || G.promo || isAiTurn() || isReviewing() || (NET.on && (G.turn !== NET.color || NET.state !== 'connected'))) return;
+
+  const move = G.legal.find((m) => m.r === r && m.c === c);
+  if (move) { executeMove(G.selected, { r, c }); return; }
+
+  const cell = G.board[r][c];
+  const same = G.selected && G.selected.r === r && G.selected.c === c;
+  if (cell.length && cell[0].color === G.turn && !same) {
+    G.selected = { r, c };
+    G.legal = getLegalMoves(r, c);
+  } else {
+    G.selected = null; G.legal = [];
+  }
+  render();
+}
+
+/* Promoção: impede criar uma unidade com Cavalo + Rainha */
+function openPromotion() {
+  const { r, c, idx } = G.promo;
+  const unit = G.board[r][c];
+  const partner = unit.find((_, i) => i !== idx);
+  const grid = $('promo-grid');
+  grid.innerHTML = '';
+
+  $('promo-lead').textContent = partner && G.rules.promoDiff
+    ? `The pawn is fused with ${NAMES[partner.type]}: it must become a different piece.`
+    : 'Choose the new piece. The other half of the unit stays the same.';
+
+  PROMO_TYPES.forEach((type) => {
+    const block = promoBlock(partner && partner.type, type);
+    const note = block === 'same' ? `Already the fused piece`
+      : block === 'ban' ? `Can't fuse with ${NAMES[partner.type]}` : '';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'promo-btn';
+    btn.disabled = !!block;
+    btn.innerHTML = `<span class="box">${pieceSVG(type, G.turn)}</span><span>${NAMES[type]}</span>${note ? `<small>${note}</small>` : ''}`;
+    btn.onclick = () => finishPromotion(type);
+    grid.appendChild(btn);
+  });
+  openModal('modal-promotion');
+}
+
+function finishPromotion(type) {
+  if (!G.promo) return;
+  const { r, c, idx } = G.promo;
+  const partner = G.board[r][c].find((_, i) => i !== idx);
+  // Nunca deixa o turno pendurado: se a peça for nula, inexistente ou proibida pelas regras
+  // (promoDiff / duplas banidas), cai na melhor opção permitida em vez de dar return sem completeTurn().
+  const options = promoOptions(partner && partner.type);
+  if (!options.includes(type)) {
+    const fallback = options[0] || PROMO_TYPES[0];
+    if (type !== undefined) console.warn(`[promotion] "${type}" is not allowed here; using "${fallback}" instead.`);
+    type = fallback;
+  }
+  G.board[r][c][idx].type = type;
+  G.history[G.history.length - 1].promo = type;
+  G.promo = null;
+  closeModal('modal-promotion');
+  completeTurn();
+}
+
+function showGameOver(winner, title, desc) {
+  closeModal('modal-resign');
+  $('over-title').textContent = title;
+  $('over-desc').textContent = desc;
+  $('over-medals').innerHTML = winner
+    ? `<div class="medal">${pieceSVG('king', winner)}</div>`
+    : `<div class="medal">${pieceSVG('king', 'white')}</div><div class="medal">${pieceSVG('king', 'black')}</div>`;
+  paintGameOver();
+  openModal('modal-gameover');
+}
+
+function openModal(id) { $(id).classList.add('open'); }
+function closeModal(id) { $(id).classList.remove('open'); }
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') { closeModal('modal-rules'); closeModal('modal-gameover'); closeModal('modal-setup'); closeModal('modal-online'); cancelResign(); }
+});
+document.querySelectorAll('.overlay').forEach((o) => o.addEventListener('mousedown', (e) => {
+  if (e.target === o && ['modal-rules', 'modal-gameover', 'modal-setup', 'modal-online', 'modal-resign'].includes(o.id)) closeModal(o.id);
+}));
+
+/* ==========================================================
+   9. Inteligência artificial
+   Motor em Web Worker (Blob embutido, sem travar a tela): PVS + Tabela de Transposição (Zobrist)
+   + Null Move + ordenação (TT, MVV-LVA, killers, history) + avaliação própria do Fusion Chess.
+   As regras (movimentos, roque, en passant, fusão, promoção) vêm das MESMAS funções do jogo,
+   serializadas com toString(): uma única fonte de verdade, o motor nunca diverge das regras.
+   ========================================================== */
+const AI_LEVELS = {
+  // depth: profundidade máxima (aprofundamento iterativo) | quiesce: termina trocas de captura | tt: TT + null move
+  // noise: erro na nota (centipeões) | blunder: chance de lance aleatório | timeMs: orçamento de tempo
+  easy:   { label: 'Easy AI',   depth: 2,  quiesce: false, tt: false, noise: 70, blunder: 0.08, timeMs: 400 },
+  medium: { label: 'Medium AI', depth: 5,  quiesce: true,  tt: true,  noise: 0,  blunder: 0,    timeMs: 1500 },
+  hard:   { label: 'Strong AI', depth: 14, quiesce: true,  tt: true,  noise: 0,  blunder: 0,    timeMs: 3000 }
+};
+const SPEED_DELAY = { slow: 1400, normal: 450, fast: 120 };
+
+/* Regras do jogo enviadas ao Worker como texto (funções reais do jogo, sem cópia manual) */
+function aiRulesSrc() {
+  return [
+    'const inBounds = ' + inBounds, 'const other = ' + other,
+    'const KNIGHT_JUMPS = ' + JSON.stringify(KNIGHT_JUMPS), 'const KING_STEPS = ' + JSON.stringify(KING_STEPS),
+    'const ORTHO = ' + JSON.stringify(ORTHO), 'const DIAG = ' + JSON.stringify(DIAG),
+    'const CASTLE_TOUCH = ' + JSON.stringify(CASTLE_TOUCH), 'const PROMO_TYPES = ' + JSON.stringify(PROMO_TYPES),
+    'const canFuse = ' + canFuse, 'const canMerge = ' + canMerge, 'const pairForbidden = ' + pairForbidden,
+    'const promoBlock = ' + promoBlock, 'const promoOptions = ' + promoOptions,
+    'const exStep = ' + exStep, 'const isPure = ' + isPure, 'const castleMoves = ' + castleMoves, 'const epMoves = ' + epMoves,
+    'const getPseudoMoves = ' + getPseudoMoves, 'const findKing = ' + findKing, 'const hasType = ' + hasType,
+    'const attacksSquare = ' + attacksSquare, 'const isKingInCheck = ' + isKingInCheck, 'const legalMovesFrom = ' + legalMovesFrom
+  ].join(';\n') + ';\nconst G = { rules: null, classicSide: null };\n';
+}
+
+/* Motor de busca. Roda dentro do Worker (ou, como reserva, num Function isolado). Retorna run(job). */
+function aiEngine() {
+  const MATE = 100000, MATE_BOUND = MATE - 1000, INF = 1e9;
+  const EXACT = 1, LOWER = 2, UPPER = 3;
+  const VAL = { pawn: 100, knight: 320, bishop: 330, rook: 500, queen: 900, king: 0 };
+  const KW = { pawn: 1, knight: 2, bishop: 2, rook: 3, queen: 5, king: 0 };   // peso de ataque ao rei
+  const TY = { pawn: 1, knight: 2, bishop: 3, rook: 4, queen: 5, king: 6 };
+  const PATTERN = { rook: ['o'], bishop: ['d'], queen: ['o', 'd'], knight: ['n'], pawn: ['p'], king: [] };
+  const PATTERN_VALUE = { o: 480, d: 330, n: 320, p: 100 };
+  const FUSED_BONUS = 60;                       // capturar uma unidade fundida vale 2 peças numa casa só
+  const PAWN_CELL = [{ type: 'pawn' }];
+
+  /* ---------- Zobrist: casa x cor x tipo1 x tipo2 (par ordenado), turno, roque, cooldown de fusão, en passant ---------- */
+  let seed = 0x9e3779b9;
+  const rnd = () => {
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return (t ^ (t >>> 14)) | 0;
+  };
+  const NZ = 64 * 2 * 7 * 7;
+  const ZLO = new Int32Array(NZ), ZHI = new Int32Array(NZ);
+  for (let i = 0; i < NZ; i++) { ZLO[i] = rnd(); ZHI[i] = rnd(); }
+  const ALO = new Int32Array(80), AHI = new Int32Array(80);     // 0 turno | 1-4 roque | 5-6 cooldown | 7.. en passant
+  for (let i = 0; i < 80; i++) { ALO[i] = rnd(); AHI[i] = rnd(); }
+  let HL = 0, HH = 0;
+  function hashPos(b, color, ex, cool) {
+    let lo = color === 'black' ? ALO[0] : 0, hi = color === 'black' ? AHI[0] : 0;
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const cell = b[r][c], n = cell.length;
+        if (!n) continue;
+        let t1 = TY[cell[0].type], t2 = 0;
+        if (n > 1) { t2 = TY[cell[1].type]; if (t2 < t1) { const t = t1; t1 = t2; t2 = t; } }
+        const i = (((r * 8 + c) * 2 + (cell[0].color === 'white' ? 0 : 1)) * 7 + t1) * 7 + t2;
+        lo ^= ZLO[i]; hi ^= ZHI[i];
+      }
+    }
+    const k = ex.cast;
+    if (k.wK) { lo ^= ALO[1]; hi ^= AHI[1]; }
+    if (k.wQ) { lo ^= ALO[2]; hi ^= AHI[2]; }
+    if (k.bK) { lo ^= ALO[3]; hi ^= AHI[3]; }
+    if (k.bQ) { lo ^= ALO[4]; hi ^= AHI[4]; }
+    if (cool.white) { lo ^= ALO[5]; hi ^= AHI[5]; }
+    if (cool.black) { lo ^= ALO[6]; hi ^= AHI[6]; }
+    if (ex.ep && ex.epBy) { const e = 7 + ex.ep.r * 8 + ex.ep.c; lo ^= ALO[e]; hi ^= AHI[e]; }
+    HL = lo; HH = hi;
+  }
+  const repKey = (hl, hh) => (hh & 0x1fffff) * 4294967296 + (hl >>> 0);
+
+  /* ---------- Tabela de transposição ---------- */
+  const TT_MASK = (1 << 19) - 1, TT_N = TT_MASK + 1;
+  const ttLo = new Int32Array(TT_N), ttHi = new Int32Array(TT_N), ttScore = new Int32Array(TT_N), ttMove = new Int32Array(TT_N);
+  const ttDepth = new Int8Array(TT_N), ttFlag = new Uint8Array(TT_N);
+  const HIST = [new Int32Array(4096), new Int32Array(4096)];      // [cor][origem*64+destino]
+
+  /* ---------- Avaliação ---------- */
+  function synergy(t1, t2) {
+    const a = PATTERN[t1], b = PATTERN[t2];
+    if (a.some((x) => b.includes(x))) return 0;
+    const sum = (list) => list.reduce((acc, k) => acc + PATTERN_VALUE[k], 0);
+    let bonus = Math.round(0.2 * Math.min(sum(a), sum(b)));
+    if ((t1 === 'rook' && t2 === 'knight') || (t1 === 'knight' && t2 === 'rook')) bonus += 35;
+    return bonus;
+  }
+  const unitValue = (cell) => { let s = 0; for (let i = 0; i < cell.length; i++) s += VAL[cell[i].type]; return s; };
+  const centerScore = (r, c) => 3.5 - Math.max(Math.abs(r - 3.5), Math.abs(c - 3.5));
+  function pieceBonus(p, r, c) {
+    switch (p.type) {
+      case 'pawn': { const adv = p.color === 'white' ? 6 - r : r - 1; return adv * 6 + (c === 3 || c === 4 ? adv * 3 : 0); }
+      case 'knight': return centerScore(r, c) * 14;
+      case 'bishop': return centerScore(r, c) * 7;
+      case 'queen': return centerScore(r, c) * 3;
+      case 'rook': return (p.color === 'white' ? r === 1 : r === 6) ? 20 : 0;
+      default: return 0;
+    }
+  }
+  /* Menor unidade inimiga que ataca a casa (valor da unidade inteira: ela arrisca as duas peças ao capturar). 0 = ninguém. */
+  function lvaAttack(b, r, c, by) {
+    let best = INF;
+    const pr = r + (by === 'white' ? 1 : -1);
+    if (pr >= 0 && pr < 8) {
+      for (let cc = c - 1; cc <= c + 1; cc += 2) {
+        if (cc >= 0 && cc < 8 && hasType(b[pr][cc], by, 'pawn')) best = Math.min(best, unitValue(b[pr][cc]));
+      }
+    }
+    for (const [dr, dc] of KNIGHT_JUMPS) {
+      const nr = r + dr, nc = c + dc;
+      if (inBounds(nr, nc) && hasType(b[nr][nc], by, 'knight')) best = Math.min(best, unitValue(b[nr][nc]));
+    }
+    for (let k = 0; k < 8; k++) {
+      const [dr, dc] = k < 4 ? ORTHO[k] : DIAG[k - 4];
+      let nr = r + dr, nc = c + dc;
+      while (inBounds(nr, nc)) {
+        const cell = b[nr][nc];
+        if (cell.length) {
+          if (k < 4 ? hasType(cell, by, 'rook', 'queen') : hasType(cell, by, 'bishop', 'queen')) best = Math.min(best, unitValue(cell));
+          break;
+        }
+        nr += dr; nc += dc;
+      }
+    }
+    return best === INF ? 0 : best;
+  }
+  /* Risco de captura dupla: unidade fundida atacada por algo mais barato (ou sem proteção) perde 2 peças de uma vez */
+  function bounty(b, r, c, color, V) {
+    const lva = lvaAttack(b, r, c, other(color));
+    if (!lva) return 0;
+    const guarded = attacksSquare(b, r, c, color);
+    const p = lva < V ? (V - lva) * 0.35 + (guarded ? 0 : V * 0.15) : (guarded ? 0 : V * 0.25);
+    return Math.min(300, p);
+  }
+
+  /* Avaliação estática do ponto de vista das Brancas (centipeões) */
+  function evaluate(b) {
+    let score = 0, nonPawn = 0, mid = 0, end = 0;
+    const mat = { white: 0, black: 0 }, kings = {}, hy = { white: false, black: false }, att = [];
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const cell = b[r][c];
+        if (!cell.length) continue;
+        const color = cell[0].color, sg = color === 'white' ? 1 : -1;
+        let v = 0, w = 0, jump = false, slide = false;
+        for (const p of cell) {
+          if (p.type === 'king') { kings[color] = { r, c }; continue; }
+          const base = VAL[p.type];
+          v += base + pieceBonus(p, r, c);
+          mat[color] += base;
+          if (p.type !== 'pawn') nonPawn += base;
+          w += KW[p.type];
+          if (p.type === 'knight') jump = true; else if (p.type !== 'pawn') slide = true;
+        }
+        if (cell.length === 2) {
+          const t1 = cell[0].type, t2 = cell[1].type, syn = synergy(t1, t2);
+          v += r === (color === 'white' ? 7 : 0) ? -10 : syn;      // fundir atrás dos peões é só perder tempo
+          v += centerScore(r, c) * 5;                              // unidade híbrida central controla mais casas
+          v -= bounty(b, r, c, color, unitValue(cell));
+          if (!syn) { mid -= sg * 22; end -= sg * 22; }            // fusão sem complementaridade: sem propósito
+          end -= sg * 16;                                          // final: duas peças separadas cobrem mais que uma unidade
+          if ((t1 === 'rook' && t2 === 'knight') || (t1 === 'knight' && t2 === 'rook')) hy[color] = true;
+          if (jump && slide) w += 2;                               // salto de Cavalo + deslizamento: ataque combinado
+        }
+        if (w) att.push(r, c, sg, w);
+        score += sg * v;
+      }
+    }
+    const endgame = nonPawn < 2400;
+    score += endgame ? end : mid;
+    for (const color of ['white', 'black']) {
+      const k = kings[color];
+      if (!k) continue;
+      const sg = color === 'white' ? 1 : -1;
+      let kv;
+      if (endgame) kv = centerScore(k.r, k.c) * 12;
+      else {
+        kv = (k.r === (color === 'white' ? 7 : 0) ? 25 : 0) + (k.c <= 2 || k.c >= 6 ? 15 : 0);
+        if (hy[other(color)]) kv -= 12;                            // Torre+Cavalo inimiga mata melhor no canto
+        let d = 0;                                                 // perigo: atacantes inimigos perto do Rei (híbridos pesam mais)
+        for (let i = 0; i < att.length; i += 4) {
+          if (att[i + 2] === sg) continue;
+          const dist = Math.max(Math.abs(att[i] - k.r), Math.abs(att[i + 1] - k.c));
+          if (dist <= 3) d += att[i + 3] * (4 - dist);
+        }
+        kv -= Math.min(150, (d * d) >> 3);
+      }
+      score += sg * kv;
+    }
+    const diff = mat.white - mat.black;
+    if (endgame && Math.abs(diff) > 250 && kings.white && kings.black) {
+      const strong = diff > 0 ? 'white' : 'black', weak = other(strong);
+      const ks = kings[strong], kw = kings[weak];
+      const edge = (3 - centerScore(kw.r, kw.c)) * 10;
+      const close = (14 - (Math.abs(ks.r - kw.r) + Math.abs(ks.c - kw.c))) * 3;
+      score += (strong === 'white' ? 1 : -1) * (edge + close);
+    }
+    return score;
+  }
+  const evalFor = (b, color) => (color === 'white' ? evaluate(b) : -evaluate(b));
+  const hasMaterial = (b, color) => {
+    for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+      const cell = b[r][c];
+      if (cell.length && cell[0].color === color && cell.some((p) => p.type !== 'pawn' && p.type !== 'king')) return true;
+    }
+    return false;
+  };
+
+  /* ---------- Lances ---------- */
+  function genMoves(b, color, capturesOnly, noMerge, ex) {
+    const out = [], king = findKing(b, color);
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const cell = b[r][c];
+        if (!cell.length || cell[0].color !== color) continue;
+        for (const m of legalMovesFrom(b, r, c, king, capturesOnly, noMerge, ex)) out.push({ fr: r, fc: c, r: m.r, c: m.c, type: m.moveType, ep: !!m.ep, o: 0, code: 0 });
+      }
+    }
+    return out;
+  }
+  /* Igual ao executeMove do jogo: a promoção olha a casa final (já com a fusão) e usa a melhor opção permitida */
+  function doMove(b, mv, ex) {
+    const unit = b[mv.fr][mv.fc], prev = b[mv.r][mv.c];
+    let cell = mv.type === 'capture' ? unit : prev.concat(unit);
+    const pi = cell.findIndex((p) => p.type === 'pawn');
+    if (pi !== -1 && mv.r === (unit[0].color === 'white' ? 0 : 7)) {
+      const partner = cell.find((_, i) => i !== pi);
+      const type = promoOptions(partner && partner.type)[0];
+      cell = cell.map((p, i) => (i === pi ? { type, color: p.color } : p));
+    }
+    b[mv.fr][mv.fc] = [];
+    b[mv.r][mv.c] = cell;
+    const rec = { unit, prev, rook: null, victim: null, saved: null };
+    if (mv.type === 'castle') {
+      const rf = mv.c > mv.fc ? 7 : 0, rt = mv.c > mv.fc ? 5 : 3;
+      rec.rook = { rf, rt, cell: b[mv.fr][rf] };
+      b[mv.fr][rt] = b[mv.fr][rf]; b[mv.fr][rf] = [];
+    } else if (mv.ep) {
+      rec.victim = b[mv.fr][mv.c]; b[mv.fr][mv.c] = [];
+    }
+    rec.saved = { cast: { ...ex.cast }, ep: ex.ep };
+    exStep(ex, mv.fr, mv.fc, mv.r, mv.c, unit, prev.length);
+    return rec;
+  }
+  function undoMove(b, mv, rec, ex) {
+    b[mv.fr][mv.fc] = rec.unit; b[mv.r][mv.c] = rec.prev;
+    if (rec.rook) { b[mv.fr][rec.rook.rf] = rec.rook.cell; b[mv.fr][rec.rook.rt] = []; }
+    if (rec.victim) b[mv.fr][mv.c] = rec.victim;
+    Object.assign(ex.cast, rec.saved.cast); ex.ep = rec.saved.ep;
+  }
+
+  /* Ordem: 1 lance da TT | 2 promoções e capturas vencedoras (MVV-LVA com valor da unidade inteira) | 3 killers
+     | (capturas perdedoras) | 4 history | 5 fusões e roques */
+  function orderMoves(b, moves, color, ply, ttCode, ctx) {
+    const kl = ctx.killers[ply], h = HIST[color === 'white' ? 0 : 1], last = color === 'white' ? 0 : 7;
+    for (const mv of moves) {
+      const src = b[mv.fr][mv.fc], code = (mv.fr * 8 + mv.fc) * 64 + mv.r * 8 + mv.c;
+      mv.code = code;
+      const promo = mv.r === last && src.some((p) => p.type === 'pawn');
+      let s;
+      if (code === ttCode) s = 4e6;
+      else if (mv.type === 'capture') {
+        const dst = mv.ep ? PAWN_CELL : b[mv.r][mv.c];
+        const vv = unitValue(dst) + (dst.length > 1 ? FUSED_BONUS : 0), av = unitValue(src);
+        s = (vv >= av ? 2e6 : 4e5) + 10 * vv - av + (promo ? 1e6 : 0);
+      } else if (promo) s = 3e6;
+      else if (kl && code === kl[0]) s = 9e5;
+      else if (kl && code === kl[1]) s = 8.9e5;
+      else if (mv.type === 'merge') s = 1 + synergy(src[0].type, b[mv.r][mv.c][0].type) / 100;
+      else if (mv.type === 'castle') s = 1.5;
+      else s = 10 + h[code - 0];
+      mv.o = s + (ply === 0 ? Math.random() * 0.4 : 0);      // variedade entre lances equivalentes na raiz
+    }
+    moves.sort((x, y) => y.o - x.o);
+  }
+
+  /* ---------- Busca ---------- */
+  function quiesce(b, color, alpha, beta, ctx, qd) {
+    if ((++ctx.nodes & 1023) === 0 && performance.now() > ctx.deadline) ctx.abort = true;
+    if (ctx.abort) return 0;
+    const stand = evalFor(b, color);
+    if (stand >= beta) return beta;
+    if (qd >= 6) return stand < alpha ? alpha : stand;
+    if (stand > alpha) alpha = stand;
+    const caps = genMoves(b, color, true, false, ctx.ex);
+    orderMoves(b, caps, color, 0, 0, ctx);
+    for (const mv of caps) {
+      const rec = doMove(b, mv, ctx.ex);
+      const score = -quiesce(b, color === 'white' ? 'black' : 'white', -beta, -alpha, ctx, qd + 1);
+      undoMove(b, mv, rec, ctx.ex);
+      if (ctx.abort) return 0;
+      if (score >= beta) return beta;
+      if (score > alpha) alpha = score;
+    }
+    return alpha;
+  }
+
+  function negamax(b, color, depth, alpha, beta, ply, ctx, canNull) {
+    if ((++ctx.nodes & 1023) === 0 && performance.now() > ctx.deadline) ctx.abort = true;
+    if (ctx.abort) return 0;
+    if (depth <= 0) return ctx.q ? quiesce(b, color, alpha, beta, ctx, 0) : evalFor(b, color);
+    const ex = ctx.ex, cool = ctx.cool, enemy = other(color);
+    hashPos(b, color, ex, cool);
+    const hl = HL, hh = HH, key = repKey(hl, hh);
+    // Repetição (histórico da partida + caminho da busca): vira empate, com viés conforme quem está melhor
+    if (ply > 0 && (ctx.rep.get(key) | 0) > 0) return color === ctx.root ? ctx.draw : -ctx.draw;
+    const pv = beta - alpha > 1;
+    let ttCode = 0;
+    if (ctx.tt) {
+      const i = hl & TT_MASK;
+      if (ttFlag[i] && ttLo[i] === hl && ttHi[i] === hh) {
+        ttCode = ttMove[i];
+        if (ply > 0 && ttDepth[i] >= depth) {
+          let s = ttScore[i];
+          if (s > MATE_BOUND) s -= ply; else if (s < -MATE_BOUND) s += ply;
+          const f = ttFlag[i];
+          if (f === EXACT) return s;
+          if (f === LOWER && s >= beta) return beta;
+          if (f === UPPER && s <= alpha) return alpha;
+        }
+      }
+    }
+    const inCheck = isKingInCheck(b, color);
+    // Null Move Pruning (R = 2): nunca em xeque, só com peças além de Rei/peões, e não sob pausa de fusão
+    if (ctx.nullOk && canNull && ply > 0 && !pv && depth >= 3 && !inCheck && !cool[color] && beta < MATE_BOUND && hasMaterial(b, color)) {
+      const sEp = ex.ep;
+      ex.ep = null;
+      const s = -negamax(b, enemy, depth - 3, -beta, -beta + 1, ply + 1, ctx, false);
+      ex.ep = sEp;
+      if (ctx.abort) return 0;
+      if (s >= beta) return beta;
+    }
+    const moves = genMoves(b, color, false, cool[color], ex);
+    if (!moves.length) return inCheck ? -MATE + ply : 0;
+    orderMoves(b, moves, color, ply, ttCode, ctx);
+    ctx.rep.set(key, (ctx.rep.get(key) | 0) + 1);
+    let best = null, flag = UPPER;
+    for (let i = 0; i < moves.length; i++) {
+      const mv = moves[i];
+      const rec = doMove(b, mv, ex), wasCool = cool[color];
+      cool[color] = G.rules.cooldown && mv.type === 'merge';      // quem acabou de fundir não funde no próximo lance
+      let score;
+      if (i === 0) score = -negamax(b, enemy, depth - 1, -beta, -alpha, ply + 1, ctx, true);
+      else {                                                      // PVS: janela nula; rebusca só se superar alpha
+        score = -negamax(b, enemy, depth - 1, -alpha - 1, -alpha, ply + 1, ctx, true);
+        if (score > alpha && score < beta) score = -negamax(b, enemy, depth - 1, -beta, -alpha, ply + 1, ctx, true);
+      }
+      cool[color] = wasCool;
+      undoMove(b, mv, rec, ex);
+      if (ctx.abort) return 0;
+      if (score >= beta) {
+        if (mv.type !== 'capture') {
+          const kl = ctx.killers[ply] || (ctx.killers[ply] = [0, 0]);
+          if (kl[0] !== mv.code) { kl[1] = kl[0]; kl[0] = mv.code; }
+          const h = HIST[color === 'white' ? 0 : 1], v = h[mv.code] + depth * depth;
+          h[mv.code] = v > 200000 ? 200000 : v;
+        }
+        alpha = beta; best = mv; flag = LOWER;
+        break;
+      }
+      if (score > alpha) {
+        alpha = score; best = mv; flag = EXACT;
+        if (ply === 0) { ctx.rootBest = mv; ctx.rootScore = score; }
+      }
+    }
+    ctx.rep.set(key, ctx.rep.get(key) - 1);
+    if (ctx.tt) {
+      const i = hl & TT_MASK;
+      if (!ttFlag[i] || depth >= ttDepth[i] || ttLo[i] !== hl || ttHi[i] !== hh) {
+        ttLo[i] = hl; ttHi[i] = hh; ttDepth[i] = depth; ttFlag[i] = flag;
+        ttMove[i] = best ? best.code : ttCode;
+        ttScore[i] = alpha > MATE_BOUND ? alpha + ply : alpha < -MATE_BOUND ? alpha - ply : alpha;
+      }
+    }
+    return alpha;
+  }
+
+  /* Escolhe o lance. job vem do jogo: tabuleiro, turno, roque, en passant, cooldowns, regras e posições anteriores. */
+  function run(job) {
+    const t0 = performance.now();
+    G.rules = job.rules; G.classicSide = job.classicSide;
+    const L = job.L, color = job.color, enemy = other(color), b = job.board;
+    const ex = { cast: job.cast, ep: job.ep, epBy: job.classicSide };
+    const cool = { white: !!job.cool.white, black: !!job.cool.black };
+    const moves = genMoves(b, color, false, cool[color], ex);
+    if (!moves.length) return { move: null };
+    if (moves.length === 1) return { move: moves[0], depth: 0, nodes: 0, ms: 0 };
+    if (L.blunder && Math.random() < L.blunder) return { move: moves[Math.floor(Math.random() * moves.length)], depth: 0, nodes: 0, ms: 0 };
+
+    const rootEval = evalFor(b, color);
+    const rep = new Map();
+    for (const f of job.frames) {
+      hashPos(f.board, f.turn, { cast: f.cast, ep: null, epBy: null }, f.cool);
+      const k = repKey(HL, HH);
+      rep.set(k, (rep.get(k) | 0) + 1);
+    }
+    const ctx = {
+      nodes: 0, abort: false, deadline: t0 + L.timeMs, q: L.quiesce, tt: L.tt, nullOk: L.tt, ex, cool, rep, root: color,
+      // Quem está ganhando evita repetir (xeque perpétuo); quem está perdendo procura a repetição
+      draw: rootEval > 120 ? -Math.min(200, rootEval >> 1) : rootEval < -120 ? Math.min(200, (-rootEval) >> 1) : 0,
+      killers: [], rootBest: null, rootScore: 0
+    };
+    for (const h of HIST) for (let i = 0; i < 4096; i++) h[i] >>= 1;     // envelhece a history entre buscas
+
+    let best = moves[0], score = 0, done = 0;
+    const noise = L.noise || (job.opening && L.tt ? 25 : 0);
+    if (noise) {
+      // Ruído: precisa da nota exata de cada lance da raiz (janela cheia, profundidade fixa)
+      const d = L.tt ? Math.min(3, L.depth) : L.depth;
+      hashPos(b, color, ex, cool);
+      rep.set(repKey(HL, HH), 1);
+      let top = -INF;
+      for (const mv of moves) {
+        const rec = doMove(b, mv, ex), wasCool = cool[color];
+        cool[color] = G.rules.cooldown && mv.type === 'merge';
+        let s = -negamax(b, enemy, d - 1, -INF, INF, 1, ctx, true);
+        cool[color] = wasCool;
+        undoMove(b, mv, rec, ex);
+        if (ctx.abort) break;
+        s += (Math.random() * 2 - 1) * noise;
+        if (s > top) { top = s; best = mv; score = s; }
+      }
+      done = d;
+    } else {
+      for (let d = 1; d <= L.depth; d++) {
+        ctx.rootBest = null;
+        negamax(b, color, d, -INF, INF, 0, ctx, false);
+        if (ctx.rootBest) { best = ctx.rootBest; score = ctx.rootScore; }   // lance já confirmado, vale mesmo se o tempo acabar
+        if (ctx.abort) break;
+        done = d;
+        if (Math.abs(score) > MATE_BOUND) break;                            // mate encontrado
+        if (performance.now() - t0 > L.timeMs * 0.45) break;                // a próxima iteração não caberia no orçamento
+      }
+    }
+    return { move: best, depth: done, nodes: ctx.nodes, ms: Math.round(performance.now() - t0), score };
+  }
+
+  if (typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope) {
+    self.onmessage = (e) => {
+      let out;
+      try { out = run(e.data); } catch (err) { out = { move: null, error: String(err && err.stack || err) }; }
+      out.id = e.data.id;
+      self.postMessage(out);
+    };
+  }
+  return run;
+}
+
+/* ---------- Ponte entre o jogo e o Worker ---------- */
+let aiWorker = null, aiWorkerURL = null, aiJob = null, aiWorkerBroken = false, aiInlineRun = null;
+const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+/* Cancela na hora qualquer busca em andamento (desfazer, nova partida, partida online) */
+function cancelAi() {
+  aiToken++;
+  if (aiJob) { const j = aiJob; aiJob = null; if (aiWorker) { aiWorker.terminate(); aiWorker = null; } j.resolve(null); }
+}
+
+function getAiWorker() {
+  if (aiWorker) return aiWorker;
+  if (!aiWorkerURL) aiWorkerURL = URL.createObjectURL(new Blob([aiRulesSrc() + '(' + aiEngine.toString() + ')();'], { type: 'text/javascript' }));
+  const w = new Worker(aiWorkerURL);
+  w.onmessage = (e) => { const j = aiJob; if (!j || e.data.id !== j.id) return; aiJob = null; j.resolve(e.data); };
+  w.onerror = (e) => { console.error('AI worker error:', e.message || e); aiWorkerBroken = true; const j = aiJob; aiJob = null; if (aiWorker === w) aiWorker = null; if (j) j.resolve({ failed: true }); };
+  aiWorker = w;
+  return w;
+}
+
+/* Cooldown de fusão de cada lado depois de n lances (derivado do histórico real) */
+function coolAfter(n, color) {
+  if (!G.rules.cooldown) return false;
+  for (let j = n - 1; j >= 0; j--) if (G.history[j].color === color) return G.history[j].kind === 'merge';
+  return false;
+}
+
+function buildAiJob(board, color, levelKey, token) {
+  const hm = halfmoveClock(), len = G.frames.length;
+  const frames = [];
+  for (let i = Math.max(0, len - 1 - hm); i < len - 1; i++) {     // posições que ainda podem se repetir (sem a atual)
+    const f = G.frames[i];
+    frames.push({ board: f.board, turn: f.turnToMove, cast: f.cast, cool: { white: coolAfter(i, 'white'), black: coolAfter(i, 'black') } });
+  }
+  return {
+    id: token, L: AI_LEVELS[levelKey], color, board, cast: G.cast, ep: G.ep, classicSide: G.classicSide, rules: G.rules,
+    cool: { white: mergeBlocked('white'), black: mergeBlocked('black') }, frames, opening: G.history.length < 8
+  };
+}
+
+/* Escolhe o lance da IA no Worker; se o navegador não permitir Workers, roda o mesmo motor na página */
+async function aiChoose(board, color, levelKey, token) {
+  const job = buildAiJob(board, color, levelKey, token);
+  let res = null;
+  if (!aiWorkerBroken) {
+    try {
+      if (aiJob) { const j = aiJob; aiJob = null; if (aiWorker) { aiWorker.terminate(); aiWorker = null; } j.resolve(null); }   // busca antiga ainda rodando: descarta
+      const w = getAiWorker();
+      res = await new Promise((resolve) => { aiJob = { id: token, resolve }; w.postMessage(job); });
+    } catch (e) { console.error('AI worker unavailable:', e); aiWorkerBroken = true; aiJob = null; }
+  }
+  if (token !== aiToken) return null;
+  if (!res || res.failed) {
+    if (res === null && !aiWorkerBroken) return null;               // cancelada
+    await tick();
+    if (token !== aiToken) return null;
+    if (!aiInlineRun) aiInlineRun = new Function(aiRulesSrc() + 'return (' + aiEngine.toString() + ')();')();
+    res = aiInlineRun(job);
+  }
+  if (res.error) console.error('AI error:', res.error);
+  if (res.nodes) console.debug(`[AI ${levelKey}] depth ${res.depth} · ${res.nodes} nodes · ${res.ms} ms · ${Math.round(res.nodes / Math.max(1, res.ms))} kn/s`);
+  return token === aiToken ? res.move : null;
+}
+
+function maybeAiMove(force) {
+  if (!G.ai || G.over || G.promo || !G.ai[G.turn]) return;
+  if (G.aiPaused && !force) return;                  // IA vs IA pausada: espera Continuar ou Próxima jogada
+  const token = ++aiToken;
+  const color = G.turn, level = G.ai[color];
+  G.thinking = true;
+  renderTags(); renderStatus();
+  const delay = SPEED_DELAY[setup.aiSpeed] || 450;
+  setTimeout(async () => {                           // pausa curta: deixa o lance anterior terminar de deslizar
+    if (token !== aiToken) return;
+    let mv = null;
+    try { mv = await aiChoose(G.board, color, level, token); }
+    catch (e) { console.error('AI error:', e); }
+    if (token !== aiToken) return;
+    G.thinking = false;
+    if (!mv) { renderTags(); renderStatus(); return; }
+    executeMove({ r: mv.fr, c: mv.fc }, { r: mv.r, c: mv.c });
+  }, delay);
+}
+
+/* ==========================================================
+   Online (WebRTC via PeerJS): sem contas, só um código de sala.
+   O anfitrião define regras e modo; o convidado digita o código.
+   Cada lado aplica as mesmas jogadas, então só as jogadas trafegam.
+   ========================================================== */
+/* ==========================================================
+   CAMADA DE REDE v2 — melhorias
+   1. Resiliência: STUN redundante + TURN configurável + ?relay=1 para testar relay.
+   2. Anti-desync: cada lance leva nº do lance (n) e hash do estado (h); divergência => resync pelo anfitrião.
+   3. Reconexão: queda NÃO encerra a partida; janela de 60 s, rediscagem com backoff, handshake "resume".
+   4. UX: ping/qualidade no cabeçalho, estados claros, revanche com timeout/cancelar/recusa.
+   ========================================================== */
+/* ---------- Configuração WebRTC (STUN/TURN) ----------
+   STUN só descobre o endereço público. 4G/5G (CGNAT), NAT simétrico e Wi-Fi corporativo exigem TURN (relay).
+   COMO PLUGAR O SEU TURN sem editar este arquivo: em um bloco de script SEPARADO, antes deste, declare
+     window.FUSION_TURN = [{
+       urls: ['turn:turn.seudominio.com:3478?transport=udp','turn:turn.seudominio.com:3478?transport=tcp',
+              'turns:turn.seudominio.com:443?transport=tcp'],       // TLS na 443 atravessa firewalls "só HTTPS"
+       username: '...', credential: '...' }];
+     (nunca escreva a tag de fechamento de script dentro de um comentario: o HTML encerra o bloco ali)
+   - coturn: use-auth-secret + static-auth-secret=SEGREDO, realm, cert TLS, min-port/max-port 49152-65535 liberadas.
+   - Credenciais efêmeras (recomendado): um endpoint seu devolve username="<expira_unix>:<user>" e
+     credential=base64(HMAC-SHA1(SEGREDO, username)). Serviços prontos: Cloudflare Calls TURN, Metered, Twilio, Xirsys.
+   - Para testar o relay: abra a página com ?relay=1 (força iceTransportPolicy:'relay').
+   - Sinalização: o broker gratuito 0.peerjs.com não tem SLA. Em produção, hospede o peerjs-server e acrescente
+     { host:'sinal.seudominio.com', port:443, path:'/', secure:true } abaixo. */
+const FORCE_RELAY = /[?&]relay(=1|&|$)/.test(location.search);
+const TURN_SERVERS = Array.isArray(window.FUSION_TURN) ? window.FUSION_TURN : [];
+const PEER_CONFIG = {
+  debug: 1,
+  pingInterval: 4000,                          // keep-alive do WebSocket de sinalização (evita broker derrubar a sala ociosa)
+  config: {
+    iceServers: [
+      { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] },   // provedores distintos: se um cair, outro responde
+      { urls: 'stun:stun.cloudflare.com:3478' },
+      { urls: 'stun:global.stun.twilio.com:3478' },
+      ...TURN_SERVERS,                                                              // seu TURN vem ANTES do relay público
+      { urls: ['turn:eu-0.turn.peerjs.com:3478', 'turn:us-0.turn.peerjs.com:3478'], username: 'peerjs', credential: 'peerjsp' }  // último recurso (sem SLA)
+    ],
+    iceCandidatePoolSize: 4,                   // pré-coleta candidatos: conecta mais rápido
+    bundlePolicy: 'max-bundle',
+    iceTransportPolicy: FORCE_RELAY ? 'relay' : 'all'
+  }
+};
+
+const NET_PING_MS = 2000;          // ping aplicativo (mede RTT e prova vida)
+const NET_WARN_MS = 4500;          // silêncio > isso => "instável" (aviso PREDITIVO, antes do timeout)
+const NET_TIMEOUT_MS = 9000;       // silêncio > isso => canal considerado morto => reconexão
+const NET_ICE_GRACE_MS = 2500;     // ICE "disconnected" pode se curar sozinho: espera um pouco
+const NET_RECONNECT_MS = 60000;    // janela de reconexão: a partida fica congelada, sem Game Over
+const NET_DIAL_MS = 8000;          // tempo máx. de cada tentativa de rediscagem
+const NET_JOIN_MS = 20000;         // entrada inicial (TURN pode levar mais que P2P direto)
+const NET_REMATCH_MS = 25000;      // pedido de revanche sem resposta é liberado (nunca fica preso)
+const NET_RTT_FAIR = 200, NET_RTT_POOR = 450;
+const NET_MAX_MOVES = 1500;        // teto defensivo para listas recebidas
+const NET_SIGNAL_ERRORS = ['network', 'server-error', 'socket-error', 'socket-closed', 'disconnected'];
+
+/* state: idle | opening | waiting | joining | connected | reconnecting | closed
+   sid: segredo da sessão (gerado pelo anfitrião, enviado no 'start'): só quem o conhece pode retomar a partida.
+   started: já houve 'start' nesta sala (então uma nova conexão é RETOMADA, não partida nova).
+   rematch: null | 'sent' | 'received' | 'accepted' */
+const NET_BLANK = { on: false, host: false, peer: null, conn: null, code: '', color: null, cfg: null, applying: false,
+  state: 'idle', err: '', sid: '', started: false, ice: 'new', rtt: null, route: '', q: 'good', slow: false, tries: 0, lostAt: 0, resyncTries: 0,
+  timer: null, beat: null, iceTimer: null, graceTimer: null, redialTimer: null, dialTimer: null, rematchTimer: null, slowTimer: null,
+  lastRx: 0, lastPing: 0, lastStats: 0, rematch: null };
+const NET = { ...NET_BLANK };
+const NET_PREFIX = 'fusionchess-';
+const parseSq = (s) => ({ r: 8 - Number(s[1]), c: FILES.indexOf(s[0]) });
+const genCode = () => { const a = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.from({ length: 5 }, () => a[Math.floor(Math.random() * a.length)]).join(''); };
+const netNewSid = () => { try { return Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) => b.toString(36).padStart(2, '0')).join(''); } catch (e) { return Math.random().toString(36).slice(2) + Date.now().toString(36); } };
+/* Durante a reconexão a partida segue "em andamento": sair pede confirmação de desistência */
+const netInProgress = () => NET.on && (NET.state === 'connected' || NET.state === 'reconnecting') && !G.over;
+
+let toastTimer = null;
+function toast(msg, alert) {
+  const el = $('toast'); if (!el) return;
+  el.textContent = msg;
+  el.classList.toggle('alert', !!alert);
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 4200);
+}
+
+function netSend(msg) {
+  try { if (NET.conn && NET.conn.open) { NET.conn.send(msg); return true; } } catch (e) { console.warn('[net] send failed:', e); }
+  return false;
+}
+
+/* ---------- Cabeçalho da sala: texto + indicador de ping/qualidade ---------- */
+function netUpdate() {
+  const el = $('net-line'); if (!el) return;
+  el.hidden = !NET.on;
+  const bad = NET.state === 'closed' || NET.state === 'reconnecting';
+  el.classList.toggle('alert', bad);
+  let txt, extra = '';
+  if (NET.state === 'reconnecting') {
+    const left = Math.max(0, Math.ceil((NET.lostAt + NET_RECONNECT_MS - Date.now()) / 1000));
+    txt = `Connection lost · reconnecting… ${left}s (your game is safe)`;
+  } else if (NET.state === 'closed') {
+    txt = 'Your opponent did not come back.';
+    extra = `<button type="button" class="btn mini" onclick="netRetry()">${NET.host ? 'Keep waiting' : 'Try again'}</button>`;
+  } else if (NET.state === 'connected') {
+    txt = `Online · room ${NET.code} · you play ${SIDE_NAME[NET.color] || '…'}`;
+    if (G.over) {
+      if (NET.rematch === 'received') { txt += ' · your opponent wants a rematch'; extra = '<button type="button" class="btn mini" onclick="playAgain()">Accept rematch</button>'; }
+      else if (NET.rematch === 'sent' || NET.rematch === 'accepted') txt += ' · waiting for opponent…';
+    }
+  } else txt = `Room ${NET.code || ''} · ${NET.host ? 'waiting for your opponent' : 'connecting…'}`;
+  const pill = NET.state === 'connected' || bad ? '<span class="net-ping" id="net-ping" role="status"></span>' : '';
+  el.innerHTML = `<span>${txt}</span>${pill}${extra}<button type="button" class="btn mini" onclick="netLeave()">Leave</button>`;
+  netPaintPing();
+}
+/* Qualidade combina sinais PREDITIVOS (silêncio, ICE, offline) com o RTT medido */
+function netQuality() {
+  if (NET.state === 'reconnecting' || NET.state === 'closed') return 'off';
+  if (NET.state !== 'connected') return 'idle';
+  if (!navigator.onLine || NET.ice === 'disconnected' || NET.ice === 'failed' || Date.now() - NET.lastRx > NET_WARN_MS) return 'poor';
+  if (NET.rtt == null) return 'good';
+  return NET.rtt >= NET_RTT_POOR ? 'poor' : NET.rtt >= NET_RTT_FAIR ? 'fair' : 'good';
+}
+function netPaintPing() {
+  const el = $('net-ping'); if (!el) return;
+  const q = netQuality();
+  el.className = `net-ping q-${q}`;
+  el.textContent = q === 'off' ? 'offline' : NET.rtt == null ? '… ms' : `${NET.rtt} ms`;
+  el.title = `Connection: ${q}${NET.route ? ' · ' + NET.route : ''}${q === 'poor' ? ' (unstable: a drop may be coming)' : ''}`;
+}
+
+/* Encerra tudo. Com graceful, a conexão só cai ~350 ms depois, para a última mensagem (ex.: resign) sair antes do close. */
+function netReset(graceful) {
+  ['timer', 'iceTimer', 'graceTimer', 'redialTimer', 'dialTimer', 'rematchTimer', 'slowTimer'].forEach((k) => clearTimeout(NET[k]));
+  clearInterval(NET.beat);
+  const { conn, peer } = NET;
+  Object.assign(NET, NET_BLANK);
+  const teardown = () => { try { conn && conn.close(); } catch (e) {} try { peer && peer.destroy(); } catch (e) {} };
+  if (graceful) setTimeout(teardown, 350); else teardown();
+  netUpdate(); paintGameOver();
+}
+function netFail(msg) { netReset(); NET.err = msg; openOnline(); }
+function netReady() {
+  if (typeof Peer !== 'undefined') return true;
+  NET.err = 'Online mode needs an internet connection.'; openOnline(); return false;
+}
+
+/* ---------- Hash de estado (anti-desync) ----------
+   cyrb53: hash rápido de 53 bits (suficiente para detectar divergência; não é criptográfico).
+   Cobre o que o positionKey NÃO cobre: en passant, pausa de fusão, nº de lances, capturas, regras e modo. */
+function cyrb53(str) {
+  let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+  for (let i = 0; i < str.length; i++) { const ch = str.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+}
+/* `turn` permite calcular o hash "pós-lance" ANTES de completeTurn virar o turno (o remetente envia dentro dele) */
+function netHash(turn = G.turn) {
+  const ep = G.ep ? `${G.ep.r}${G.ep.c}${G.ep.vr}${G.ep.vc}` : '-';
+  const rules = RULE_DEFS.map((d) => (G.rules[d.key] ? 1 : 0)).join('');
+  return cyrb53([positionKey(G.board, turn, G.cast), ep, +mergeBlocked('white'), +mergeBlocked('black'), G.history.length,
+    G.captured.white.length, G.captured.black.length, rules, G.gameMode, G.classicSide || '-'].join('~'));
+}
+const netMoveList = () => G.history.map((h) => ({ from: h.from, to: h.to, promo: h.promo || null }));
+/* Chamado por completeTurn(): lance + nº sequencial + hash pós-lance */
+function netSendMove(h) {
+  netSend({ t: 'move', from: h.from, to: h.to, promo: h.promo || null, n: G.history.length, h: netHash(other(G.turn)) });
+}
+
+/* ---------- Detecção de queda: heartbeat com RTT + ICE + stats ---------- */
+function netHeartbeatStop() { clearInterval(NET.beat); NET.beat = null; }
+function netProbe() { NET.lastPing = Date.now(); netSend({ t: 'ping', ts: performance.now() }); }
+function netHeartbeatStart(c) {
+  netHeartbeatStop();
+  NET.lastRx = Date.now(); NET.lastPing = 0; NET.lastStats = 0; NET.q = 'good';
+  NET.beat = setInterval(() => {
+    if (NET.conn !== c) { netHeartbeatStop(); return; }
+    const now = Date.now();
+    if (now - NET.lastRx > NET_TIMEOUT_MS) { netPeerLost(c, 'heartbeat timeout'); return; }
+    if (now - NET.lastPing >= NET_PING_MS) netProbe();
+    if (now - NET.lastStats >= 3000) { NET.lastStats = now; netPollStats(c); }
+    const q = netQuality();
+    if (q === 'poor' && NET.q !== 'poor') toast('Unstable connection… the game will wait if it drops.');
+    NET.q = q; netPaintPing();
+  }, 1000);
+}
+/* getStats: descobre se o caminho é direto (P2P) ou relay (TURN) para diagnóstico no tooltip do ping */
+async function netPollStats(c) {
+  const pc = c.peerConnection; if (!pc || pc.connectionState === 'closed') return;
+  try {
+    const stats = await pc.getStats(); let pair = null; const locals = {};
+    stats.forEach((s) => { if (s.type === 'local-candidate') locals[s.id] = s; if (s.type === 'candidate-pair' && (s.selected || (s.nominated && s.state === 'succeeded'))) pair = s; });
+    if (NET.conn !== c || !pair) return;
+    const lc = locals[pair.localCandidateId];
+    if (lc) NET.route = lc.candidateType === 'relay' ? 'relayed (TURN)' : 'direct (P2P)';
+  } catch (e) {}
+}
+/* Volta do segundo plano: não conta o tempo parada como silêncio; sonda na hora; se estava reconectando, tenta já */
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden || !NET.on) return;
+  if (NET.state === 'connected') { NET.lastRx = Date.now(); netProbe(); }
+  else if (NET.state === 'reconnecting' && !NET.host) { NET.tries = 0; netScheduleRedial(); }
+});
+window.addEventListener('offline', () => { if (NET.on) { netPaintPing(); toast('You are offline. Waiting for the network…', true); } });
+window.addEventListener('online', () => {
+  if (!NET.on) return;
+  if (NET.state === 'connected') netProbe(); else if (NET.state === 'reconnecting' && !NET.host) { NET.tries = 0; netScheduleRedial(); }
+});
+/* Fechar de verdade a aba avisa o outro lado na hora (ele entra em "reconectando", sem Game Over) */
+window.addEventListener('pagehide', (e) => { if (!e.persisted) try { NET.conn && NET.conn.close(); } catch (x) {} });
+
+/* addEventListener (não oniceconnectionstatechange =) para não sobrescrever o handler interno do PeerJS */
+function netWatchIce(c) {
+  let tries = 0;
+  const attach = () => {
+    const pc = c.peerConnection;
+    if (!pc) { if (tries++ < 30 && NET.conn === c) setTimeout(attach, 100); return; }
+    pc.addEventListener('iceconnectionstatechange', () => {
+      if (NET.conn !== c) return;
+      const st = NET.ice = pc.iceConnectionState;
+      clearTimeout(NET.iceTimer);
+      if (st === 'failed') { netPeerLost(c, 'ICE failed'); return; }
+      if (st === 'disconnected') {               // sinal precoce: avisa na hora e sonda; só desiste após a graça
+        netProbe();
+        NET.iceTimer = setTimeout(() => { if (NET.conn === c && pc.iceConnectionState === 'disconnected') netPeerLost(c, 'ICE disconnected'); }, NET_ICE_GRACE_MS);
+      } else if (st === 'connected' || st === 'completed') netPollStats(c);
+      netPaintPing();
+    });
+    pc.addEventListener('connectionstatechange', () => { if (NET.conn === c && pc.connectionState === 'failed') netPeerLost(c, 'PC failed'); });
+  };
+  attach();
+}
+
+/* ---------- Perda do adversário + RECONEXÃO ----------
+   Partida em andamento: NÃO é Game Over. Congela o tabuleiro, abre uma janela de NET_RECONNECT_MS e religa
+   na MESMA sala. Anfitrião: espera (o Peer segue registrado). Convidado: rediscagem com backoff exponencial. */
+function netPeerLost(c, reason) {
+  if (NET.conn !== c) return;
+  console.warn('[net] connection lost:', reason);
+  const st = NET.state;
+  netHeartbeatStop(); clearTimeout(NET.iceTimer); clearTimeout(NET.dialTimer);
+  NET.conn = null;
+  try { c.close(); } catch (e) {}
+  if (st === 'connected' && NET.started) { toast('Connection lost. Trying to reconnect…', true); netEnterReconnecting(); return; }
+  if (st === 'reconnecting') { netScheduleRedial(); return; }          // uma tentativa de rediscagem falhou: tenta de novo
+  if (NET.host) { NET.state = 'waiting'; NET.rematch = null; }          // antes do 'start': a sala continua aberta
+  else {
+    netFail(/^(ICE|PC)/.test(reason)
+      ? 'Could not establish a connection. Your network (4G/corporate Wi-Fi) may block peer-to-peer traffic: a TURN relay server is needed.'
+      : 'Could not connect to the room. It may be full, or your network may be blocking the connection.');
+    return;
+  }
+  netUpdate(); paintGameOver(); render();
+}
+function netEnterReconnecting() {
+  NET.state = 'reconnecting'; NET.lostAt = Date.now(); NET.tries = 0; NET.rematch = null; NET.ice = 'new';
+  clearTimeout(NET.rematchTimer); clearTimeout(NET.graceTimer);
+  NET.graceTimer = setTimeout(netGiveUp, NET_RECONNECT_MS);
+  NET.beat = setInterval(netUpdate, 1000);                              // contador regressivo no cabeçalho
+  if (!NET.host) netScheduleRedial();
+  closeModal('modal-online'); netUpdate(); paintGameOver(); render();
+}
+function netGiveUp() {                                                  // janela esgotada: NÃO encerra a partida, só oferece opções
+  if (NET.state !== 'reconnecting') return;
+  clearInterval(NET.beat); clearTimeout(NET.redialTimer); clearTimeout(NET.dialTimer);
+  NET.state = 'closed';
+  netUpdate(); paintGameOver(); render(); openOnline();
+}
+function netRetry() { if (NET.on && NET.state === 'closed') { closeModal('modal-online'); netEnterReconnecting(); } }
+function netScheduleRedial() {
+  clearTimeout(NET.redialTimer);
+  if (NET.host || !NET.on || NET.state !== 'reconnecting') return;
+  NET.redialTimer = setTimeout(netRedialNow, Math.min(400 * 2 ** NET.tries++, 4000));   // 0.4 s, 0.8 s, 1.6 s, 3.2 s, 4 s…
+}
+function netRedialNow() {
+  if (NET.host || NET.conn || !NET.on || NET.state !== 'reconnecting') return;
+  let p = NET.peer;
+  if (!p || p.destroyed) {                                              // Peer morreu (erro fatal): cria outro; o sid prova quem somos
+    p = new Peer(undefined, PEER_CONFIG); NET.peer = p; netKeepSignaling(p);
+    p.on('open', () => { if (NET.peer === p && !NET.conn && NET.state === 'reconnecting') netDial(p); });
+    p.on('error', (e) => netGuestPeerError(p, e));
+    netScheduleRedial(); return;
+  }
+  if (p.disconnected) { try { p.reconnect(); } catch (e) {} netScheduleRedial(); return; }
+  if (!p.open) { netScheduleRedial(); return; }
+  netDial(p);
+}
+function netDial(p) {
+  const c = p.connect(NET_PREFIX + NET.code, { reliable: true, metadata: { sid: NET.sid || null } });
+  setupConn(c);
+  if (NET.started) { clearTimeout(NET.dialTimer); NET.dialTimer = setTimeout(() => { if (NET.conn === c && !c.open) netPeerLost(c, 'dial timeout'); }, NET_DIAL_MS); }
+}
+function netGuestPeerError(p, e) {
+  console.warn('[net] peer error:', e && e.type, e);
+  if (NET.peer !== p) return;
+  if (NET.state === 'reconnecting') { if (NET.conn && !NET.conn.open) netPeerLost(NET.conn, 'peer error ' + e.type); else if (!NET.conn) netScheduleRedial(); return; }
+  if (NET.state === 'connected' || NET.state === 'closed') return;
+  netFail(e.type === 'peer-unavailable' ? 'Room not found. Check the code with the host.'
+    : NET_SIGNAL_ERRORS.includes(e.type) ? 'Could not reach the matchmaking server. Check your internet and try again.' : 'Could not connect. Check your connection and try again.');
+}
+
+/* Reconecta ao servidor de sinalização sem derrubar a partida (o canal de dados é independente) */
+function netKeepSignaling(p) {
+  let tries = 0;
+  p.on('open', () => { tries = 0; });
+  p.on('disconnected', () => {
+    if (NET.peer !== p || p.destroyed) return;
+    console.warn('[net] lost the signaling server; reconnecting…');
+    if (tries++ >= 20) { console.warn('[net] giving up on the signaling server.'); return; }
+    setTimeout(() => { if (NET.peer !== p || p.destroyed || !p.disconnected) return; try { p.reconnect(); } catch (e) { console.warn('[net] reconnect failed:', e); } }, Math.min(400 * tries, 5000));
+  });
+}
+
+/* ---------- Início de partida ---------- */
+function buildCfg() {
+  const versus = setup.gameMode === 'versus';
+  return { gameMode: versus ? 'versus' : 'fusion', classicSide: versus ? other(setup.fusionSide) : null,
+    mode: versus ? 'balanced' : setup.mode, rules: versus ? allRules(true) : rulesFor(setup), hostColor: setup.side };
+}
+function startOnline(cfg) {
+  cancelAi();
+  NET.color = cfg.myColor; NET.started = true; NET.resyncTries = 0;
+  clearTimeout(NET.rematchTimer); NET.rematch = null;
+  Object.assign(G, { ai: null, aiPaused: false, flipped: cfg.myColor === 'black', gameMode: cfg.gameMode,
+    classicSide: cfg.classicSide, mode: cfg.mode, rules: cfg.rules, thinking: false });
+  closeModal('modal-promotion'); closeModal('modal-gameover'); closeModal('modal-online'); closeModal('modal-resign');
+  initGame(); netUpdate(); paintGameOver();
+}
+function netStart() {          // anfitrião: envia a configuração e começa
+  const cfg = NET.cfg;
+  netSend({ t: 'start', sid: NET.sid, cfg: { ...cfg, myColor: other(cfg.hostColor) } });
+  startOnline({ ...cfg, myColor: cfg.hostColor });
+}
+function netOnStart(cfg) {     // convidado: nunca confia cegamente no que chega pela rede
+  if (!cfg || (cfg.myColor !== 'white' && cfg.myColor !== 'black')) { console.warn('[net] invalid start message ignored:', cfg); return; }
+  const versus = cfg.gameMode === 'versus';
+  startOnline({
+    gameMode: versus ? 'versus' : 'fusion',
+    classicSide: versus ? (cfg.classicSide === 'black' ? 'black' : 'white') : null,
+    mode: MODE_LABEL[cfg.mode] ? cfg.mode : 'balanced',
+    rules: Object.fromEntries(RULE_DEFS.map((d) => [d.key, !!(cfg.rules && cfg.rules[d.key])])),
+    myColor: cfg.myColor
+  });
+}
+
+function hostOnline() {
+  const cfg = buildCfg();
+  if (NET.host && NET.conn && NET.conn.open && NET.state === 'connected') { NET.cfg = cfg; netStart(); return; }
+  if (!netReady()) return;
+  netReset(); NET.on = true; NET.host = true; NET.state = 'opening'; NET.cfg = cfg;
+  createRoom(0); netUpdate(); openOnline();
+}
+function createRoom(tries) {
+  NET.code = genCode();
+  const p = new Peer(NET_PREFIX + NET.code, PEER_CONFIG); NET.peer = p;
+  netKeepSignaling(p);
+  p.on('open', () => { if (NET.peer !== p || NET.state !== 'opening') return; NET.state = 'waiting'; netUpdate(); openOnline(); });
+  p.on('connection', (c) => netOnIncoming(p, c));
+  p.on('error', (e) => {
+    console.warn('[net] peer error:', e && e.type, e);
+    if (NET.peer !== p) return;
+    if (e.type === 'unavailable-id' && NET.state === 'opening' && tries < 5) { try { p.destroy(); } catch (x) {} createRoom(tries + 1); }
+    else if (NET.state === 'opening') netFail('Could not create the room. Check your connection and try again.');
+    else if (NET.state === 'waiting' && !NET_SIGNAL_ERRORS.includes(e.type)) netFail('The room was closed by an error. Create a new one.');
+    // conectado/reconectando ou erro de sinalização: o canal de dados segue vivo, netKeepSignaling cuida do resto
+  });
+}
+/* Anfitrião: conexão de entrada. `sid` no metadata prova que é o jogador ORIGINAL voltando (retomada).
+   Estranho durante a janela de reconexão é recusado: a vaga fica reservada; conexão zumbi é substituída. */
+function netOnIncoming(p, c) {
+  if (NET.peer !== p) { c.close(); return; }
+  const sid = c.metadata && c.metadata.sid;
+  const mine = NET.started && !!NET.sid && sid === NET.sid;
+  if ((NET.conn && !mine) || (!mine && NET.state === 'reconnecting')) { c.close(); return; }
+  if (NET.conn) { const old = NET.conn; NET.conn = null; netHeartbeatStop(); try { old.close(); } catch (e) {} }
+  if (!mine) { NET.started = false; NET.sid = netNewSid(); }          // convidado novo = partida nova
+  setupConn(c);
+}
+function joinRoom() {
+  const code = (($('on-code') || {}).value || '').trim().toUpperCase();
+  if (code.length < 5) { NET.err = 'Type the 5-character room code.'; openOnline(); return; }
+  if (!netReady()) return;
+  netReset(); NET.on = true; NET.host = false; NET.code = code; NET.state = 'joining';
+  const p = new Peer(undefined, PEER_CONFIG); NET.peer = p;
+  netKeepSignaling(p);
+  let dialed = false;        // 'open' repete após reconexão ao broker: não pode discar duas vezes
+  p.on('open', () => { if (dialed || NET.peer !== p || NET.state !== 'joining') return; dialed = true; netDial(p); });
+  p.on('error', (e) => netGuestPeerError(p, e));
+  NET.timer = setTimeout(() => { if (NET.state === 'joining') netFail('Could not connect to the room. Check the code and your network, then try again. If it keeps failing, a TURN relay server may be required.'); }, NET_JOIN_MS);
+  NET.slowTimer = setTimeout(() => { if (NET.state === 'joining') { NET.slow = true; openOnline(); } }, 7000);
+  netUpdate(); openOnline();
+}
+function setupConn(c) {
+  NET.conn = c; NET.ice = 'new'; NET.route = '';
+  netWatchIce(c);
+  const opened = () => {
+    if (NET.conn !== c) return;
+    const resuming = NET.started;                                     // já havia partida: retoma em vez de recomeçar
+    ['timer', 'graceTimer', 'dialTimer', 'redialTimer', 'slowTimer'].forEach((k) => clearTimeout(NET[k]));
+    NET.state = 'connected'; NET.rematch = null; NET.tries = 0; NET.slow = false;
+    netHeartbeatStart(c); netProbe(); netUpdate();
+    if (resuming) { closeModal('modal-online'); netSendResume(); toast('Connection restored.'); render(); }
+    else if (NET.host) netStart(); else netSend({ t: 'hello' });
+  };
+  c.open ? opened() : c.on('open', opened);
+  c.on('data', (m) => { if (NET.conn === c) netOnData(m); });
+  c.on('close', () => netPeerLost(c, 'closed'));
+  c.on('error', (err) => { console.warn('[net] connection error:', err); netPeerLost(c, 'connection error'); });
+}
+
+/* ---------- Mensagens recebidas ---------- */
+const SQ_RE = /^[a-h][1-8]$/;
+function netOnData(m) {
+  if (!m || typeof m !== 'object' || typeof m.t !== 'string') return;
+  NET.lastRx = Date.now();                       // qualquer pacote prova que o adversário está vivo
+  switch (m.t) {
+    case 'ping': netSend({ t: 'pong', ts: m.ts }); break;
+    case 'pong': {                               // RTT suavizado (EWMA) para o indicador de ping
+      const rtt = typeof m.ts === 'number' ? Math.round(performance.now() - m.ts) : -1;
+      if (rtt >= 0 && rtt < 30000) NET.rtt = NET.rtt == null ? rtt : Math.round(NET.rtt * 0.7 + rtt * 0.3);
+      netPaintPing(); break;
+    }
+    case 'hello': break;
+    case 'start': if (!NET.host) { if (typeof m.sid === 'string' && m.sid.length <= 64) NET.sid = m.sid; netOnStart(m.cfg); } break;
+    case 'move': netApplyMove(m); break;
+    case 'resume': netOnResume(m); break;
+    case 'moves': netOnMoves(m); break;
+    case 'resync_req': if (NET.host) netSendResync(); break;
+    case 'resync': netOnResync(m); break;
+    case 'resign': netOnResign(); break;
+    case 'rematch_req': netOnRematchReq(); break;
+    case 'rematch_acc': netOnRematchAcc(); break;
+    case 'rematch_deny': case 'rematch_cancel':   // libera o botão "preso": o outro lado desistiu/recusou
+      if (NET.rematch) { NET.rematch = null; netRematchChanged(); if (m.t === 'rematch_deny') toast('Your opponent cannot rematch right now.'); } break;
+    default: console.warn('[net] unknown message ignored:', m.t);
+  }
+}
+
+/* ---------- Sincronização: validação, replay, retomada e resync ---------- */
+/* Valida com as MESMAS regras do jogo local antes de tocar no tabuleiro. NÃO checa de quem é a vez do rede
+   (o replay aplica lances das duas cores). Devolve true/false; em exceção, desfaz o lance. */
+function netApplyOne(m) {
+  const bad = (why) => { console.warn(`[net] illegal move ignored (${why}):`, m); return false; };
+  if (!m || G.over) return bad('game is over');
+  if (G.promo) return bad('a promotion is pending');
+  if (typeof m.from !== 'string' || typeof m.to !== 'string' || !SQ_RE.test(m.from) || !SQ_RE.test(m.to)) return bad('malformed squares');
+  const from = parseSq(m.from), to = parseSq(m.to);
+  if (!inBounds(from.r, from.c) || !inBounds(to.r, to.c)) return bad('out of bounds');
+  const unit = G.board[from.r][from.c];
+  if (!unit.length || unit[0].color !== G.turn) return bad('origin square has no piece of the side to move');
+  const dest = G.board[to.r][to.c];
+  if (dest.length && dest[0].color === G.turn && mergeBlocked(G.turn)) return bad('fusion cooldown');
+  if (!getLegalMoves(from.r, from.c).some((mv) => mv.r === to.r && mv.c === to.c)) return bad('destination is not a legal move');
+  const depth = snapshots.length;
+  try {
+    executeMove(from, to);
+    if (G.promo) finishPromotion(m.promo);       // valida m.promo; cai numa opção permitida se vier nulo/proibido
+    return true;
+  } catch (err) {
+    console.error('[net] error while applying a move; rolling back:', err);
+    if (snapshots.length > depth) {
+      const snap = snapshots[depth]; snapshots.length = depth;
+      Object.assign(G, { board: snap.board, turn: snap.turn, captured: snap.captured, history: snap.history, last: snap.last, cast: snap.cast, ep: snap.ep,
+        selected: null, legal: [], fx: null, promo: null });
+      closeModal('modal-promotion'); render();
+    }
+    return false;
+  }
+}
+/* Replay silencioso (sem som, sem reenviar nada). Devolve quantos lances foram aplicados. */
+function netReplay(list) {
+  const sound = soundEnabled; soundEnabled = false; NET.applying = true;
+  let n = 0;
+  try { for (const m of list) { if (!netApplyOne(m)) break; n++; } } finally { NET.applying = false; soundEnabled = sound; }
+  return n;
+}
+/* Lance ao vivo: confere ordem (n), duplicata, lacuna e, no fim, o hash do estado */
+function netApplyMove(m) {
+  const have = G.history.length;
+  if (Number.isInteger(m.n)) {
+    if (m.n <= have) return;                                  // duplicata (já recebido numa retomada)
+    if (m.n > have + 1) { netSendResume(); return; }          // lacuna: perdemos lance(s): pede os que faltam
+  }
+  if (G.turn === NET.color) { console.warn('[net] move ignored: not the opponent\'s turn', m); return; }
+  NET.applying = true;
+  let ok = false;
+  try { ok = netApplyOne(m); } finally { NET.applying = false; }
+  if (!ok) { netDesync('remote move rejected'); return; }
+  if (typeof m.h === 'string' && m.h !== netHash()) netDesync(`hash mismatch at move ${m.n}`);
+}
+/* Divergência detectada: o ANFITRIÃO é a autoridade. Ele reenvia a partida inteira; o convidado a pede. */
+function netDesync(why) {
+  console.error('[net] DESYNC:', why);
+  if (++NET.resyncTries > 3) { toast('Game out of sync. Please leave the room and start a new one.', true); return; }
+  toast('Re-synchronising the game…');
+  NET.host ? netSendResync() : netSend({ t: 'resync_req', why });
+}
+const netSendResume = () => netSend({ t: 'resume', n: G.history.length, h: netHash() });
+const netSendResync = () => netSend({ t: 'resync', moves: netMoveList(), n: G.history.length, h: netHash() });
+/* Os DOIS lados enviam 'resume' ao (re)conectar: quem está à frente manda os lances que faltam; mesmo nº com hash
+   diferente => o anfitrião manda a partida completa. Assim lances perdidos durante a queda nunca se perdem. */
+function netOnResume(m) {
+  const mine = G.history.length;
+  if (!Number.isInteger(m.n) || m.n < 0 || m.n > NET_MAX_MOVES) return;
+  if (m.n < mine) netSend({ t: 'moves', from: m.n, list: netMoveList().slice(m.n), h: netHash() });
+  else if (m.n === mine && m.h !== netHash() && NET.host) netSendResync();
+}
+function netOnMoves(m) {
+  const have = G.history.length;
+  if (!Array.isArray(m.list) || !Number.isInteger(m.from) || m.list.length > NET_MAX_MOVES || m.from > have) { netSendResume(); return; }
+  const fresh = m.list.slice(have - m.from);                // ignora o que já temos
+  if (fresh.length && netReplay(fresh) !== fresh.length) { netDesync('catch-up replay rejected'); return; }
+  if (typeof m.h === 'string' && m.h !== netHash()) { netDesync('hash mismatch after catch-up'); return; }
+  if (fresh.length) { toast('Back in sync.'); render(); }
+}
+function netOnResync(m) {                                    // só o convidado: reconstrói a partida a partir da lista do anfitrião
+  if (NET.host || !Array.isArray(m.moves) || m.moves.length > NET_MAX_MOVES) return;
+  closeModal('modal-promotion'); closeModal('modal-gameover');
+  initGame();                                                // zera tabuleiro/histórico (mantém regras, cores e orientação)
+  const ok = netReplay(m.moves) === m.moves.length && (typeof m.h !== 'string' || m.h === netHash());
+  if (!ok) { toast('Could not sync with the host. Leave the room and join again.', true); return; }
+  NET.resyncTries = 0; toast('Game re-synchronised.'); render();
+}
+
+/* ---------- Desistência ---------- */
+let resignAfter = 'setup';
+function askResign(after) {
+  resignAfter = after || 'setup';
+  closeModal('modal-online');
+  openModal('modal-resign');
+  const b = $('btn-resign-cancel'); if (b) b.focus();      // foco no botão seguro
+}
+function cancelResign() { closeModal('modal-resign'); }
+function confirmResign() {
+  closeModal('modal-resign');
+  const after = resignAfter;
+  if (netInProgress()) {
+    netSend({ t: 'resign' });                              // avisa o adversário antes de fechar a conexão
+    closeModal('modal-promotion');
+    Object.assign(G, { promo: null, selected: null, legal: [], over: true, result: { winner: other(NET.color), reason: 'resignation' } });
+    netReset(true);
+    render();
+    if (after === 'setup') openSetup();
+  } else if (after === 'setup') {
+    openSetup();                                           // a partida acabou/caiu enquanto o modal estava aberto
+  } else {
+    netReset(); render();
+  }
+}
+function netOnResign() {
+  if (G.over) return;
+  closeModal('modal-promotion'); closeModal('modal-resign');
+  Object.assign(G, { promo: null, selected: null, legal: [], over: true, result: { winner: NET.color, reason: 'resignation' } });
+  playSound('win');
+  render();
+  showGameOver(NET.color, 'Opponent resigned', 'Your opponent resigned. You won the game.');
+}
+function netLeave() {
+  if (netInProgress()) { askResign('leave'); return; }
+  netReset(); closeModal('modal-online'); render();
+}
+
+/* ---------- Revanche ---------- */
+function paintGameOver() {
+  const btn = $('btn-play-again'), note = $('over-net'); if (!btn || !note) return;
+  let label = 'Play again', disabled = false, msg = '';
+  if (NET.on) {
+    if (NET.state === 'reconnecting') { label = 'Reconnecting…'; disabled = true; msg = 'Connection lost. Waiting for your opponent to come back…'; }
+    else if (NET.state !== 'connected') { label = 'Opponent left'; disabled = true; msg = 'Your opponent is no longer in the room, so a rematch is not possible.'; }
+    else if (NET.rematch === 'sent') { label = 'Cancel request'; msg = 'Rematch requested: waiting for your opponent. Colors will be swapped.'; }
+    else if (NET.rematch === 'accepted') { label = 'Starting rematch…'; disabled = true; }
+    else if (NET.rematch === 'received') { label = 'Accept rematch'; msg = 'Your opponent wants a rematch. Colors will be swapped.'; }
+  }
+  btn.textContent = label; btn.disabled = disabled;
+  note.hidden = !msg; note.textContent = msg;
+}
+/* Revanche nunca fica presa: 'sent'/'accepted' expiram sozinhos, 'sent' pode ser cancelado e o outro lado pode recusar */
+function netRematchChanged() {
+  clearTimeout(NET.rematchTimer);
+  if (NET.rematch === 'sent' || NET.rematch === 'accepted') {
+    NET.rematchTimer = setTimeout(() => {
+      if (NET.rematch !== 'sent' && NET.rematch !== 'accepted') return;
+      NET.rematch = null; toast('No answer to the rematch request. You can try again.', true); netRematchChanged();
+    }, NET_REMATCH_MS);
+  }
+  netUpdate(); paintGameOver();
+}
+function playAgain() {
+  if (!NET.on) { closeModal('modal-gameover'); resetGame(); return; }
+  if (NET.state !== 'connected') { toast('Your opponent is no longer in the room.', true); paintGameOver(); return; }
+  if (!G.over) return;
+  if (NET.rematch === 'sent') { NET.rematch = null; netSend({ t: 'rematch_cancel' }); netRematchChanged(); return; }   // cancela o próprio pedido
+  if (NET.rematch === 'accepted') return;
+  if (NET.rematch === 'received') {                       // aceitar o pedido do adversário
+    netSend({ t: 'rematch_acc' });
+    if (NET.host) netRematchStart(); else { NET.rematch = 'accepted'; netRematchChanged(); }
+    return;
+  }
+  NET.rematch = 'sent';
+  netSend({ t: 'rematch_req' });
+  netRematchChanged();
+}
+function netOnRematchReq() {
+  if (!G.over) { console.warn('[net] rematch request ignored: the game is still in progress'); netSend({ t: 'rematch_deny' }); return; }
+  if (NET.rematch === 'sent') {                           // pedidos cruzados = os dois querem
+    if (NET.host) netRematchStart(); else { NET.rematch = 'accepted'; netRematchChanged(); }
+    return;
+  }
+  NET.rematch = 'received';
+  netRematchChanged();
+  toast('Your opponent wants a rematch.');
+  if (!document.querySelector('.overlay.open')) openModal('modal-gameover');
+}
+function netOnRematchAcc() {
+  if (!G.over) return;
+  if (NET.host && NET.rematch === 'sent') netRematchStart();   // o convidado só espera o 'start' do anfitrião
+}
+function netRematchStart() {                              // só o anfitrião: troca as cores e recomeça
+  if (!NET.host || NET.state !== 'connected' || !NET.cfg) return;
+  NET.cfg = { ...NET.cfg, hostColor: other(NET.cfg.hostColor) };
+  netStart();
+}
+function copyRoomCode() { writeClipboard(NET.code).then((ok) => { const b = $('copy-room'); if (b) b.textContent = ok ? 'Copied!' : 'Could not copy'; }); }
+
+function openOnline() {
+  const b = $('on-body'), t = $('on-title'), l = $('on-lead');
+  const err = NET.err ? `<p class="hint alert">${NET.err}</p>` : '';
+  const foot = (...btns) => `<div class="foot">${btns.join('')}</div>`;
+  const btn = (label, fn, cls = '', id = '') => `<button class="btn ${cls}"${id ? ` id="${id}"` : ''} onclick="${fn}">${label}</button>`;
+  if (!NET.on) {
+    t.textContent = 'Join a room';
+    l.textContent = 'Type the code the host shared with you. No account needed.';
+    b.innerHTML = `<input class="code-in" id="on-code" maxlength="5" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="CODE" aria-label="Room code" onkeydown="if(event.key==='Enter')joinRoom()">${err}`
+      + foot(btn('Cancel', "closeModal('modal-online')"), btn('Join', 'joinRoom()', 'primary'));
+    NET.err = '';
+  } else if (NET.state === 'reconnecting') {
+    t.textContent = 'Reconnecting…';
+    l.textContent = `Connection lost. Trying to get back into room ${NET.code} for up to ${NET_RECONNECT_MS / 1000} s. Your game is safe and paused.`;
+    b.innerHTML = foot(btn('Hide', "closeModal('modal-online')"), btn('Leave room', 'netLeave()'));
+  } else if (NET.state === 'closed') {
+    t.textContent = NET.host ? 'Opponent disconnected' : 'Connection lost';
+    l.textContent = NET.host ? `Your opponent did not come back in time. The game is kept: they can still rejoin with code ${NET.code}.` : `Could not get back into room ${NET.code}. The game is kept: you can try again.`;
+    b.innerHTML = foot(btn(NET.host ? 'Keep waiting' : 'Try again', 'netRetry()', 'primary'), btn('Leave room', 'netLeave()'));
+  } else if (NET.host) {
+    t.textContent = 'Room created';
+    l.textContent = NET.state === 'opening' ? 'Creating the room…' : 'Send this code to your friend. The game starts as soon as they join. To change rules, close the room and start a new online game.';
+    b.innerHTML = `<div class="code-box">${NET.code || '·····'}</div>` + foot(btn('Copy code', 'copyRoomCode()', '', 'copy-room'), btn('Close room', 'netLeave()'));
+  } else if (NET.state === 'connected') {
+    t.textContent = 'Connected';
+    l.textContent = `You are in room ${NET.code}, playing ${SIDE_NAME[NET.color] || '…'}.`;
+    b.innerHTML = foot(btn('Close', "closeModal('modal-online')"), btn('Leave room', 'netLeave()'));
+  } else {
+    t.textContent = 'Joining…';
+    l.textContent = `Connecting to room ${NET.code}…`;
+    const slow = NET.slow ? '<p class="hint">Taking longer than usual. Some networks (4G, corporate Wi-Fi) need a relay; it can take up to 20 s.</p>' : '';
+    b.innerHTML = `${slow}${err}` + foot(btn('Cancel', 'netLeave()'));
+  }
+  openModal('modal-online');
+  const inp = $('on-code'); if (inp) inp.focus();
+}
+
+/* ---------- Tela "Nova partida" ---------- */
+const OPP_HINT = {
+  human: 'Two players on the same device, each on their own turn.',
+  easy: 'Sees the opponent\'s reply and avoids losing pieces for free, but doesn\'t plan ahead and makes mistakes. Good for learning fusion.',
+  medium: 'Calculates three moves ahead (four in endgames), trades pieces wisely and fuses when it pays off. Takes up to 2 seconds per move.',
+  hard: 'Calculates four moves ahead (five in endgames) and plays very precisely. May take up to 3.5 seconds per move.',
+  online: 'Play a friend on another device. You get a room code to share; they type it in "Join room". No account needed.',
+  ai_vs_ai: 'The two AIs play each other on their own. Choose each side\'s difficulty and the speed below — you can pause and step through move by move whenever you like.'
+};
+
+const GM_HINT = {
+  fusion: 'Fusion Chess as usual: both sides can fuse pieces.',
+  versus: 'One side plays classic chess with the normal rules. The other plays Fusion Chess in Balanced mode. Works against a person, against the AI, or AI vs AI.'
+};
+
+const MODE_HINT = {
+  balanced: 'All rules on. More strategic fusions and evenly matched games.',
+  chaos: 'No rules on: any piece except the King fuses with any other, with no cooldown and no limits on promotion.',
+  custom: 'Choose below which rules are active in this game.'
+};
+
+function openSetup() {
+  // Partida online em andamento: qualquer um dos dois jogadores precisa confirmar a desistência primeiro
+  if (netInProgress()) { askResign('setup'); return; }
+  // Convidado sem partida ativa (acabou, caiu ou ainda conectando): sai da sala para poder configurar uma nova
+  if (NET.on && !NET.host) netReset();
+  pending = { ...setup, custom: { ...setup.custom } }; paintSetup(); openModal('modal-setup');
+}
+function pickSetup(key, value) {
+  // Ao abrir o Personalizado pela primeira vez, parte das regras que o preset atual mostra
+  if (key === 'mode' && value === 'custom' && pending.mode !== 'custom' && !pending.customEdited) pending.custom = rulesFor(pending);
+  pending[key] = value;
+  paintSetup();
+}
+function toggleRule(key) {
+  if (pending.mode !== 'custom') return;
+  pending.custom[key] = !pending.custom[key];
+  pending.customEdited = true;
+  paintSetup();
+}
+function paintSetup() {
+  const versus = pending.gameMode === 'versus';
+  const roleOf = (color) => (color === pending.fusionSide ? 'Fusion' : 'Classic');
+  document.querySelectorAll('#seg-gamemode button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.gameMode)));
+  document.querySelectorAll('#seg-fusionside button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.fusionSide)));
+  $('field-fusionside').hidden = !versus;
+  $('field-mode').hidden = versus;                       // no Clássico vs Fusion o modo é sempre Balanceado
+  $('gm-hint').textContent = GM_HINT[pending.gameMode];
+  document.querySelectorAll('#seg-side button').forEach((b) => { b.textContent = `${SIDE_NAME[b.dataset.v]}${versus ? ` · ${roleOf(b.dataset.v)}` : ''}`; });
+  $('lbl-ai-white').textContent = `White's difficulty${versus ? ` (${roleOf('white')})` : ''}`;
+  $('lbl-ai-black').textContent = `Black's difficulty${versus ? ` (${roleOf('black')})` : ''}`;
+  document.querySelectorAll('#seg-opponent button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.opponent)));
+  document.querySelectorAll('#seg-side button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.side)));
+  document.querySelectorAll('#seg-mode button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.mode)));
+  document.querySelectorAll('#seg-ai-white button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.aiWhite)));
+  document.querySelectorAll('#seg-ai-black button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.aiBlack)));
+  document.querySelectorAll('#seg-ai-speed button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.aiSpeed)));
+  $('field-side').hidden = pending.opponent === 'human' || pending.opponent === 'ai_vs_ai';
+  $('field-aivai').hidden = pending.opponent !== 'ai_vs_ai';
+  $('opp-hint').textContent = OPP_HINT[pending.opponent];
+  $('mode-hint').textContent = MODE_HINT[pending.mode];
+
+  const flags = rulesFor(pending), editable = pending.mode === 'custom';
+  $('rule-list').innerHTML = RULE_DEFS.map((d) => `
+    <button type="button" class="rule-row" role="switch" data-k="${d.key}" aria-checked="${flags[d.key]}"${editable ? '' : ' disabled'} onclick="toggleRule('${d.key}')">
+      <span class="txt"><strong>${d.title}</strong><small>${d.short}</small></span>
+      <span class="sw" aria-hidden="true"></span>
+    </button>`).join('');
+}
+function applySetup() { setup = { ...pending, custom: { ...pending.custom } }; closeModal('modal-setup'); resetGame(); }
+
+/* ---------- Modal "Regras": mostra o estado real das regras da partida ---------- */
+const RULE_ART = {
+  noKnightQueen: () => `${pieceSVG('knight', 'white')}<span class="arrow">✕</span>${pieceSVG('queen', 'white')}`,
+  noRookBishop: () => `${pieceSVG('rook', 'white')}<span class="arrow">✕</span>${pieceSVG('bishop', 'white')}`,
+  cooldown: () => `<div class="piece" style="inset:0 0 14px">${unitHTML(['bishop', 'knight'], 'white')}</div><span class="badge">1 turn</span>`,
+  promoDiff: () => `<div class="piece" style="inset:0 0 14px">${unitHTML(['pawn', 'rook'], 'white')}</div><span class="badge">≠ Rook</span>`
+};
+const RULE_LONG = {
+  noKnightQueen: 'Knight and Queen never fuse. This also applies to promotion: Pawn + Knight cannot become Queen + Knight.',
+  noRookBishop: 'Rook and Bishop never fuse. This also applies to promotion: Pawn + Rook cannot become Bishop + Rook.',
+  cooldown: 'After fusing, your next move must be a regular move or a capture. Fused on your 1st move? You can only fuse again on your 3rd.',
+  promoDiff: 'On promotion, the fused pawn must become a piece different from its partner. Rook + Pawn, for example, can never become Rook + Rook.'
+};
+
+function openRules() {
+  $('rules-lead').textContent = G.gameMode === 'versus'
+    ? `One side plays classic chess, with no fusions. The other plays Fusion Chess and can fuse two of its pieces into one. In this game, ${SIDE_NAME[G.classicSide]} plays classic and ${SIDE_NAME[other(G.classicSide)]} plays Fusion.`
+    : 'Chess as usual, with one extra move: fuse two of your pieces into one.';
+  $('rules-head').innerHTML = `Rules for this game: ${MODE_LABEL[G.mode]} <span>(${activeRuleCount()} of ${RULE_DEFS.length} active)</span>`;
+  $('rules-dynamic').innerHTML = RULE_DEFS.map((d) => {
+    const on = !!G.rules[d.key];
+    return `<div class="rule${on ? '' : ' off'}">
+      <div class="art${d.key.startsWith('no') ? ' row' : ''}">${RULE_ART[d.key]()}</div>
+      <div><h3>${d.title} <span class="pill${on ? ' on' : ''}">${on ? 'Active' : 'Disabled'}</span></h3><p>${RULE_LONG[d.key]}</p></div>
+    </div>`;
+  }).join('');
+  openModal('modal-rules');
+}
+
+/* ==========================================================
+   10. Ilustrações estáticas (logo, painel, regras)
+   ========================================================== */
+function paintStatic() {
+  $('brand-mark').innerHTML = unitHTML(['knight', 'bishop'], 'white');
+  $('demo-hybrid').innerHTML = `<div class="piece">${unitHTML(['rook', 'knight'], 'white')}</div>`;
+  $('art-fuse').innerHTML = `<div class="piece">${unitHTML(['knight', 'bishop'], 'white')}</div>`;
+  $('art-limits').innerHTML = `${pieceSVG('king', 'white')}<span class="arrow">✕</span>${pieceSVG('rook', 'white')}`;
+  $('art-unit').innerHTML = `<div class="piece">${unitHTML(['rook', 'pawn'], 'black')}</div>`;
+  $('art-promo').innerHTML = `<div class="piece">${unitHTML(['queen', 'bishop'], 'white')}</div>`;
+  $('art-castle').innerHTML = `${pieceSVG('king', 'white')}<span class="arrow">⇄</span>${pieceSVG('rook', 'white')}`;
+}
+
+window.addEventListener('DOMContentLoaded', () => { paintStatic(); startGame(); });
+</script>
+</body>
+</html>
