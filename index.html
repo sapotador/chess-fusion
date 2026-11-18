@@ -137,7 +137,7 @@ button { font-family: inherit; color: inherit; }
 .mk { position: absolute; z-index: 4; pointer-events: none; }
 .mk.move { left: 36%; top: 36%; width: 28%; height: 28%; border-radius: 50%; background: rgba(20, 24, 28, .28); }
 .mk.capture { inset: 5%; border-radius: 50%; border: 4px solid rgba(201, 58, 54, .85); }
-.mk.merge { inset: 6%; border-radius: 50%; border: 3px solid var(--accent); }
+.mk.merge { inset: 6%; border-radius: 50%; border: 4px dashed var(--accent); }
 .mk.castle { inset: 14%; border-radius: 50%; border: 3px dashed rgba(20, 24, 28, .55); }
 
 /* Efeitos de jogada */
@@ -559,6 +559,12 @@ button { font-family: inherit; color: inherit; }
         <button type="button" role="radio" data-v="normal" onclick="pickSetup('aiSpeed', 'normal')" data-i18n="setup.speeds.normal">Normal</button>
         <button type="button" role="radio" data-v="fast" onclick="pickSetup('aiSpeed', 'fast')" data-i18n="setup.speeds.fast">Fast</button>
       </div>
+      <div class="field-label" id="lbl-ai-ui" style="margin-top:10px" data-i18n="setup.label.showUI">Show player interface</div>
+      <div class="seg" role="radiogroup" aria-labelledby="lbl-ai-ui" id="seg-ai-ui">
+        <button type="button" role="radio" data-v="on" onclick="pickSetup('aiShowUI', 'on')" data-i18n="setup.showUI.on">On</button>
+        <button type="button" role="radio" data-v="off" onclick="pickSetup('aiShowUI', 'off')" data-i18n="setup.showUI.off">Off</button>
+      </div>
+      <p class="hint short" data-i18n="setup.showUIHint">The AIs select the piece and show the move markers before moving, just like a player.</p>
       <p class="hint short" data-i18n="setup.speedHint">You can pause and step through the game move by move at any time.</p>
     </div>
 
@@ -698,7 +704,7 @@ const translations = {
       thinking: 'The AI is thinking…', promo: 'Choose the promotion piece.',
       hintClassic: 'Dot: move. Red ring: capture. Dashed ring: castle. Classic chess: no fusion.',
       hintBlocked: 'Dot: move. Red ring: capture. Fusion blocked this turn.',
-      hintNormal: 'Dot: move. Red ring: capture. Violet ring: fuse.',
+      hintNormal: 'Dot: move. Red ring: capture. Dashed violet ring: fuse.',
       noMoves: 'This piece has no legal moves right now.',
       mergeBlocked: '{{side}} fused on the previous move: now they can only move or capture.',
       tap: 'Tap a piece to see its moves.'
@@ -761,7 +767,9 @@ const translations = {
     },
     setup: {
       title: 'New game', lead: 'Choose the game mode, who to play against, and which rules to use.',
-      label: { gameMode: 'Game mode', fusionSide: 'Who plays Fusion', opponent: 'Opponent', side: 'You play as', speed: 'Move speed', rules: 'Fusion rules' },
+      label: { gameMode: 'Game mode', fusionSide: 'Who plays Fusion', opponent: 'Opponent', side: 'You play as', speed: 'Move speed', rules: 'Fusion rules', showUI: 'Show player interface' },
+      showUI: { on: 'On', off: 'Off' },
+      showUIHint: 'The AIs select the piece and show the move markers before moving, just like a player.',
       game: { fusion: 'Fusion Chess', versus: 'Classic vs Fusion' },
       gameHint: {
         fusion: 'Fusion Chess as usual: both sides can fuse pieces.',
@@ -933,7 +941,7 @@ const translations = {
       thinking: 'A IA está pensando…', promo: 'Escolha a peça da promoção.',
       hintClassic: 'Ponto: mover. Anel vermelho: capturar. Anel tracejado: roque. Xadrez clássico: sem fusão.',
       hintBlocked: 'Ponto: mover. Anel vermelho: capturar. Fusão bloqueada neste turno.',
-      hintNormal: 'Ponto: mover. Anel vermelho: capturar. Anel violeta: fundir.',
+      hintNormal: 'Ponto: mover. Anel vermelho: capturar. Anel violeta tracejado: fundir.',
       noMoves: 'Esta peça não tem jogadas legais agora.',
       mergeBlocked: 'As {{side}} fundiram na jogada anterior: agora só podem mover ou capturar.',
       tap: 'Toque em uma peça para ver as jogadas dela.'
@@ -996,7 +1004,9 @@ const translations = {
     },
     setup: {
       title: 'Novo jogo', lead: 'Escolha o modo de jogo, contra quem jogar e quais regras usar.',
-      label: { gameMode: 'Modo de jogo', fusionSide: 'Quem joga Fusion', opponent: 'Oponente', side: 'Você joga de', speed: 'Velocidade das jogadas', rules: 'Regras de fusão' },
+      label: { gameMode: 'Modo de jogo', fusionSide: 'Quem joga Fusion', opponent: 'Oponente', side: 'Você joga de', speed: 'Velocidade das jogadas', rules: 'Regras de fusão', showUI: 'Mostrar interface do jogador' },
+      showUI: { on: 'Ligado', off: 'Desligado' },
+      showUIHint: 'As IAs selecionam a peça e mostram os marcadores de lance antes de mover, como um jogador.',
       game: { fusion: 'Fusion Chess', versus: 'Clássico vs Fusion' },
       gameHint: {
         fusion: 'Fusion Chess como de costume: os dois lados podem fundir peças.',
@@ -1421,7 +1431,7 @@ const G = {
 };
 let snapshots = [];
 let aiToken = 0;       // invalida buscas antigas (desfazer, nova partida)
-let setup = { gameMode: 'fusion', fusionSide: 'white', opponent: 'medium', side: 'white', mode: 'balanced', custom: allRules(true), customEdited: false, aiWhite: 'easy', aiBlack: 'medium', aiSpeed: 'normal' };
+let setup = { gameMode: 'fusion', fusionSide: 'white', opponent: 'medium', side: 'white', mode: 'balanced', custom: allRules(true), customEdited: false, aiWhite: 'easy', aiBlack: 'medium', aiSpeed: 'normal', aiShowUI: 'on' };
 let pending = { ...setup, custom: { ...setup.custom } };
 
 const isAiTurn = () => !!G.ai && !!G.ai[G.turn] && !G.over;
@@ -2403,6 +2413,7 @@ const AI_LEVELS = {
   hard:   { depth: 14, quiesce: true,  tt: true,  noise: 0,  blunder: 0,    timeMs: 3000 }
 };
 const SPEED_DELAY = { slow: 1400, normal: 450, fast: 120 };
+const SELECT_DELAY = { slow: 1100, normal: 700, fast: 250 };   // tempo mostrando a peça selecionada e os marcadores (IA vs IA)
 
 /* Regras do jogo enviadas ao Worker como texto (funções reais do jogo, sem cópia manual) */
 function aiRulesSrc() {
@@ -2925,6 +2936,13 @@ function maybeAiMove(force) {
     if (token !== aiToken) return;
     G.thinking = false;
     if (!mv) { renderTags(); renderStatus(); return; }
+    if (setup.aiShowUI !== 'off' && bothAiControlled()) {                  // mostra a interface do jogador: peça selecionada + marcadores de lance
+      G.selected = { r: mv.fr, c: mv.fc };
+      G.legal = getLegalMoves(mv.fr, mv.fc);
+      render();
+      await new Promise((res) => setTimeout(res, SELECT_DELAY[setup.aiSpeed] || 700));
+      if (token !== aiToken) { G.selected = null; G.legal = []; render(); return; }
+    }
     executeMove({ r: mv.fr, c: mv.fc }, { r: mv.r, c: mv.c });
   }, delay);
 }
@@ -3626,6 +3644,7 @@ function paintSetup() {
   document.querySelectorAll('#seg-mode button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.mode)));
   document.querySelectorAll('#seg-ai-white button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.aiWhite)));
   document.querySelectorAll('#seg-ai-black button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.aiBlack)));
+  document.querySelectorAll('#seg-ai-ui button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.aiShowUI)));
   document.querySelectorAll('#seg-ai-speed button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.aiSpeed)));
   $('field-side').hidden = pending.opponent === 'human' || pending.opponent === 'ai_vs_ai';
   $('field-aivai').hidden = pending.opponent !== 'ai_vs_ai';
