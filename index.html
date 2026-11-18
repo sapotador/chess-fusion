@@ -399,7 +399,7 @@ button { font-family: inherit; color: inherit; }
     <button class="btn" id="btn-ai-pause" onclick="toggleAiPause()" hidden data-i18n="btn.pause">Pause</button>
     <button class="btn" id="btn-ai-step" onclick="aiStep()" hidden data-i18n="btn.nextMove">Next move</button>
     <button class="btn" onclick="flipBoard()" data-i18n="btn.flip">Flip</button>
-    <button class="btn" id="btn-sound" onclick="toggleSound()" aria-pressed="true">Sound<span class="snd"> on</span></button>
+    <button class="btn" id="btn-sound" onclick="toggleSound()" aria-pressed="false">Sound<span class="snd"> off</span></button>
     <div class="lang-switch" id="lang-switch" role="group" aria-label="Language" data-i18n-aria-label="lang.label"></div>
     <button class="btn" onclick="openOnline()" data-i18n="btn.joinRoom">Join room</button>
     <button class="btn" onclick="openRules()" data-i18n="btn.rules">Rules</button>
@@ -561,10 +561,12 @@ button { font-family: inherit; color: inherit; }
       </div>
       <div class="field-label" id="lbl-ai-ui" style="margin-top:10px" data-i18n="setup.label.showUI">Show player interface</div>
       <div class="seg" role="radiogroup" aria-labelledby="lbl-ai-ui" id="seg-ai-ui">
-        <button type="button" role="radio" data-v="on" onclick="pickSetup('aiShowUI', 'on')" data-i18n="setup.showUI.on">On</button>
-        <button type="button" role="radio" data-v="off" onclick="pickSetup('aiShowUI', 'off')" data-i18n="setup.showUI.off">Off</button>
+        <button type="button" role="radio" data-v="both" onclick="pickSetup('aiShowUI', 'both')" data-i18n="setup.showUI.both">Both</button>
+        <button type="button" role="radio" data-v="white" onclick="pickSetup('aiShowUI', 'white')" data-i18n="setup.showUI.white">White only</button>
+        <button type="button" role="radio" data-v="black" onclick="pickSetup('aiShowUI', 'black')" data-i18n="setup.showUI.black">Black only</button>
+        <button type="button" role="radio" data-v="off" onclick="pickSetup('aiShowUI', 'off')" data-i18n="setup.showUI.off">None</button>
       </div>
-      <p class="hint short" data-i18n="setup.showUIHint">The AIs select the piece and show the move markers before moving, just like a player.</p>
+      <p class="hint short" data-i18n="setup.showUIHint">Choose which AI(s) select the piece and show the move markers before moving, just like a player.</p>
       <p class="hint short" data-i18n="setup.speedHint">You can pause and step through the game move by move at any time.</p>
     </div>
 
@@ -768,8 +770,8 @@ const translations = {
     setup: {
       title: 'New game', lead: 'Choose the game mode, who to play against, and which rules to use.',
       label: { gameMode: 'Game mode', fusionSide: 'Who plays Fusion', opponent: 'Opponent', side: 'You play as', speed: 'Move speed', rules: 'Fusion rules', showUI: 'Show player interface' },
-      showUI: { on: 'On', off: 'Off' },
-      showUIHint: 'The AIs select the piece and show the move markers before moving, just like a player.',
+      showUI: { both: 'Both', white: 'White only', black: 'Black only', off: 'None' },
+      showUIHint: 'Choose which AI(s) select the piece and show the move markers before moving, just like a player.',
       game: { fusion: 'Fusion Chess', versus: 'Classic vs Fusion' },
       gameHint: {
         fusion: 'Fusion Chess as usual: both sides can fuse pieces.',
@@ -1005,8 +1007,8 @@ const translations = {
     setup: {
       title: 'Novo jogo', lead: 'Escolha o modo de jogo, contra quem jogar e quais regras usar.',
       label: { gameMode: 'Modo de jogo', fusionSide: 'Quem joga Fusion', opponent: 'Oponente', side: 'Você joga de', speed: 'Velocidade das jogadas', rules: 'Regras de fusão', showUI: 'Mostrar interface do jogador' },
-      showUI: { on: 'Ligado', off: 'Desligado' },
-      showUIHint: 'As IAs selecionam a peça e mostram os marcadores de lance antes de mover, como um jogador.',
+      showUI: { both: 'Ambos', white: 'Só Brancas', black: 'Só Pretas', off: 'Nenhum' },
+      showUIHint: 'Escolha qual(is) IA(s) selecionam a peça e mostram os marcadores de lance antes de mover, como um jogador.',
       game: { fusion: 'Fusion Chess', versus: 'Clássico vs Fusion' },
       gameHint: {
         fusion: 'Fusion Chess como de costume: os dois lados podem fundir peças.',
@@ -1362,7 +1364,7 @@ function chipHTML(types, color) {
 /* ==========================================================
    3. Som (Web Audio)
    ========================================================== */
-let soundEnabled = true;
+let soundEnabled = false;   // o som começa desligado
 let audioCtx = null;
 
 function getAudio() {
@@ -1372,11 +1374,11 @@ function getAudio() {
 }
 
 const SOUNDS = {
-  move:    { type: 'sine',     f: [[350, 0], [200, .1]],                     dur: .1,  vol: .2,  ramp: true },
-  capture: { type: 'sawtooth', f: [[120, 0], [50, .15]],                     dur: .15, vol: .3,  ramp: true },
-  merge:   { type: 'sine',     f: [[130, 0], [220, .25]],                    dur: .3,  vol: .35, ramp: true },
-  check:   { type: 'square',   f: [[400, 0], [600, .1]],                     dur: .3,  vol: .15, ramp: false },
-  win:     { type: 'triangle', f: [[440, 0], [554.37, .15], [659.25, .3]],   dur: .6,  vol: .3,  ramp: false }
+  move:    { type: 'sine',     f: [[260, 0], [190, .12]],                    dur: .12, vol: .07, ramp: true,  lp: 900 },
+  capture: { type: 'triangle', f: [[210, 0], [130, .16]],                    dur: .18, vol: .10, ramp: true,  lp: 700 },
+  merge:   { type: 'sine',     f: [[220, 0], [330, .22]],                    dur: .26, vol: .08, ramp: true,  lp: 1000 },
+  check:   { type: 'triangle', f: [[330, 0], [440, .1]],                     dur: .22, vol: .06, ramp: false, lp: 1100 },
+  win:     { type: 'sine',     f: [[330, 0], [415.3, .15], [494, .3]],       dur: .6,  vol: .08, ramp: false, lp: 1200 }
 };
 
 function playSound(name) {
@@ -1386,16 +1388,19 @@ function playSound(name) {
     const ctx = getAudio();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    osc.connect(gain); gain.connect(ctx.destination);
+    const lp = ctx.createBiquadFilter();            // filtro passa-baixa: tira o chiado agudo
+    lp.type = 'lowpass'; lp.frequency.value = s.lp || 1000;
+    osc.connect(lp); lp.connect(gain); gain.connect(ctx.destination);
     const t = ctx.currentTime;
     osc.type = s.type;
     s.f.forEach(([hz, at], i) => {
       if (i === 0 || !s.ramp) osc.frequency.setValueAtTime(hz, t + at);
       else osc.frequency.exponentialRampToValueAtTime(hz, t + at);
     });
-    gain.gain.setValueAtTime(s.vol, t);
-    gain.gain.linearRampToValueAtTime(0.01, t + s.dur);
-    osc.start(t); osc.stop(t + s.dur);
+    gain.gain.setValueAtTime(0.0001, t);            // entrada suave: sem estalo
+    gain.gain.linearRampToValueAtTime(s.vol, t + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + s.dur);
+    osc.start(t); osc.stop(t + s.dur + 0.02);
   } catch (e) { console.warn('Audio unavailable:', e); }
 }
 
@@ -1431,7 +1436,7 @@ const G = {
 };
 let snapshots = [];
 let aiToken = 0;       // invalida buscas antigas (desfazer, nova partida)
-let setup = { gameMode: 'fusion', fusionSide: 'white', opponent: 'medium', side: 'white', mode: 'balanced', custom: allRules(true), customEdited: false, aiWhite: 'easy', aiBlack: 'medium', aiSpeed: 'normal', aiShowUI: 'on' };
+let setup = { gameMode: 'fusion', fusionSide: 'white', opponent: 'medium', side: 'white', mode: 'balanced', custom: allRules(true), customEdited: false, aiWhite: 'easy', aiBlack: 'medium', aiSpeed: 'normal', aiShowUI: 'both' };
 let pending = { ...setup, custom: { ...setup.custom } };
 
 const isAiTurn = () => !!G.ai && !!G.ai[G.turn] && !G.over;
@@ -2936,7 +2941,7 @@ function maybeAiMove(force) {
     if (token !== aiToken) return;
     G.thinking = false;
     if (!mv) { renderTags(); renderStatus(); return; }
-    if (setup.aiShowUI !== 'off' && bothAiControlled()) {                  // mostra a interface do jogador: peça selecionada + marcadores de lance
+    if (bothAiControlled() && (setup.aiShowUI === 'both' || setup.aiShowUI === color)) {                  // mostra a interface do jogador: peça selecionada + marcadores de lance
       G.selected = { r: mv.fr, c: mv.fc };
       G.legal = getLegalMoves(mv.fr, mv.fc);
       render();
