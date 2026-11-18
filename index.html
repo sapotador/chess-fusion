@@ -371,6 +371,14 @@ button { font-family: inherit; color: inherit; }
 .net-ping.q-poor::before,.net-ping.q-off::before{animation:netblink 1s infinite}
 @keyframes netblink{50%{opacity:.25}}
 @media (prefers-reduced-motion:reduce){.net-ping::before{animation:none!important}}
+
+/* Seletor de idioma (gerado por buildLangSwitch a partir de `translations`) */
+.lang-switch { display: inline-flex; align-items: stretch; min-height: 40px; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: rgba(255, 255, 255, .03); }
+.lang-btn { font: inherit; font-weight: 700; font-size: 12px; letter-spacing: .04em; min-width: 40px; padding: 0 10px; color: var(--muted); background: transparent; border: 0; cursor: pointer; transition: background .15s, color .15s; }
+.lang-btn + .lang-btn { border-left: 1px solid var(--line); }
+.lang-btn:hover { background: rgba(255, 255, 255, .06); color: var(--text); }
+.lang-btn[aria-pressed="true"] { background: var(--accent); color: #ffffff; }
+.lang-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
 </style>
 </head>
 <body>
@@ -381,56 +389,57 @@ button { font-family: inherit; color: inherit; }
     <div class="brand-mark" id="brand-mark" aria-hidden="true"></div>
     <div>
       <h1>Fusion Chess</h1>
-      <p>Chess where your pieces can merge.</p>
+      <p data-i18n="app.tagline">Chess where your pieces can merge.</p>
     </div>
   </div>
   <div class="actions">
-    <button class="btn" id="btn-undo" onclick="undo()">Undo</button>
-    <button class="btn" id="btn-back" onclick="reviewBack()" title="Step back one move">Back</button>
-    <button class="btn" id="btn-resume" onclick="reviewJumpLive()" hidden>Back to current</button>
-    <button class="btn" id="btn-ai-pause" onclick="toggleAiPause()" hidden>Pause</button>
-    <button class="btn" id="btn-ai-step" onclick="aiStep()" hidden>Next move</button>
-    <button class="btn" onclick="flipBoard()">Flip</button>
+    <button class="btn" id="btn-undo" onclick="undo()" data-i18n="btn.undo">Undo</button>
+    <button class="btn" id="btn-back" onclick="reviewBack()" title="Step back one move" data-i18n-title="btn.backTitle" data-i18n="btn.back">Back</button>
+    <button class="btn" id="btn-resume" onclick="reviewJumpLive()" hidden data-i18n="btn.backCurrent">Back to current</button>
+    <button class="btn" id="btn-ai-pause" onclick="toggleAiPause()" hidden data-i18n="btn.pause">Pause</button>
+    <button class="btn" id="btn-ai-step" onclick="aiStep()" hidden data-i18n="btn.nextMove">Next move</button>
+    <button class="btn" onclick="flipBoard()" data-i18n="btn.flip">Flip</button>
     <button class="btn" id="btn-sound" onclick="toggleSound()" aria-pressed="true">Sound<span class="snd"> on</span></button>
-    <button class="btn" onclick="openOnline()">Join room</button>
-    <button class="btn" onclick="openRules()">Rules</button>
-    <button class="btn primary" onclick="openSetup()">New game</button>
+    <div class="lang-switch" id="lang-switch" role="group" aria-label="Language" data-i18n-aria-label="lang.label"></div>
+    <button class="btn" onclick="openOnline()" data-i18n="btn.joinRoom">Join room</button>
+    <button class="btn" onclick="openRules()" data-i18n="btn.rules">Rules</button>
+    <button class="btn primary" onclick="openSetup()" data-i18n="btn.newGame">New game</button>
   </div>
 </header>
 
 <main class="stage">
-  <section class="board-col" aria-label="Board">
+  <section class="board-col" aria-label="Board" data-i18n-aria-label="a11y.board">
     <div class="tag" id="tag-top"></div>
-    <div class="frame"><div class="board" id="board" role="grid" aria-label="Chess board"></div></div>
+    <div class="frame"><div class="board" id="board" role="grid" aria-label="Chess board" data-i18n-aria-label="a11y.chessBoard"></div></div>
     <div class="tag" id="tag-bottom"></div>
   </section>
 
-  <aside class="side" aria-label="Game">
+  <aside class="side" aria-label="Game" data-i18n-aria-label="a11y.game">
     <div class="status" aria-live="polite">
       <div class="status-title" id="status-title">White's turn</div>
       <div class="status-sub" id="status-sub">Tap a piece to see its moves.</div>
       <div class="net-line" id="net-line" hidden></div>
-      <button type="button" class="mode-chip" id="mode-chip" onclick="openRules()" title="View the rules for this game"></button>
+      <button type="button" class="mode-chip" id="mode-chip" onclick="openRules()" title="View the rules for this game" data-i18n-title="rules.viewTitle"></button>
     </div>
     <div class="review-bar" id="review-bar" hidden>
-      <button type="button" class="btn mini" id="btn-review-back" onclick="reviewBack()" title="Previous move">
+      <button type="button" class="btn mini" id="btn-review-back" onclick="reviewBack()" title="Previous move" data-i18n-title="review.prev">
         <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M11 3 L5 8 L11 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
-      <button type="button" class="btn mini" id="btn-review-play" onclick="toggleReviewPlay()" title="Play / pause">
+      <button type="button" class="btn mini" id="btn-review-play" onclick="toggleReviewPlay()" title="Play / pause" data-i18n-title="review.playPause">
         <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" id="review-play-icon"><path d="M5 3 L13 8 L5 13 Z"/></svg>
       </button>
-      <button type="button" class="btn mini" id="btn-review-forward" onclick="reviewForward()" title="Next move">
+      <button type="button" class="btn mini" id="btn-review-forward" onclick="reviewForward()" title="Next move" data-i18n-title="review.next">
         <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M5 3 L11 8 L5 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
       <span class="review-pos" id="review-pos">Move 0 / 0</span>
     </div>
     <div class="section-head">
-      <span>Moves</span>
+      <span data-i18n="history.title">Moves</span>
       <span class="right">
         <span class="count" id="move-count">0</span>
-        <button type="button" class="btn mini" id="btn-copy" onclick="copyHistory()" disabled title="Copy the move and fusion history">
+        <button type="button" class="btn mini" id="btn-copy" onclick="copyHistory()" disabled title="Copy the move and fusion history" data-i18n-title="history.copyTitle">
           <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><rect x="5.5" y="5.5" width="8" height="8" rx="1.8"/><path d="M10.5 3.5V3.3C10.5 2.3 9.7 1.5 8.7 1.5H3.8C2.8 1.5 2 2.3 2 3.3v4.9c0 1 .8 1.8 1.8 1.8h.2"/></svg>
-          <span id="copy-label">Copy</span>
+          <span id="copy-label" data-i18n="btn.copy">Copy</span>
         </button>
         <span class="sr-only" id="copy-status" aria-live="polite"></span>
       </span>
@@ -446,8 +455,8 @@ button { font-family: inherit; color: inherit; }
 <!-- Promotion -->
 <div class="overlay" id="modal-promotion" role="dialog" aria-modal="true" aria-labelledby="promo-title">
   <div class="sheet center">
-    <h2 id="promo-title">Promote the pawn</h2>
-    <p class="lead" id="promo-lead">Choose the new piece. The other half of the unit stays the same.</p>
+    <h2 id="promo-title" data-i18n="promo.title">Promote the pawn</h2>
+    <p class="lead" id="promo-lead" data-i18n="promo.lead">Choose the new piece. The other half of the unit stays the same.</p>
     <div class="promo-grid" id="promo-grid"></div>
   </div>
 </div>
@@ -455,76 +464,76 @@ button { font-family: inherit; color: inherit; }
 <!-- Rules -->
 <div class="overlay" id="modal-rules" role="dialog" aria-modal="true" aria-labelledby="rules-title">
   <div class="sheet">
-    <h2 id="rules-title">Fusion rules</h2>
-    <p class="lead" id="rules-lead">Chess as usual, with one extra move: fuse two of your pieces into one.</p>
+    <h2 id="rules-title" data-i18n="rules.title">Fusion rules</h2>
+    <p class="lead" id="rules-lead" data-i18n="rules.leadFusion">Chess as usual, with one extra move: fuse two of your pieces into one.</p>
 
     <div class="rule">
       <div class="art" id="art-fuse"></div>
-      <div><h3>Fuse</h3><p>Move a piece onto another of the same color (violet square). They become one unit with the moves of both. Fusing uses up your turn.</p></div>
+      <div><h3 data-i18n="rules.fuse.title">Fuse</h3><p data-i18n="rules.fuse.text">Move a piece onto another of the same color (violet square). They become one unit with the moves of both. Fusing uses up your turn.</p></div>
     </div>
     <div class="rule">
       <div class="art row" id="art-limits"></div>
-      <div><h3>Limits</h3><p>At most two pieces per square. A fused unit cannot fuse again. The King is left out.</p></div>
+      <div><h3 data-i18n="rules.limits.title">Limits</h3><p data-i18n="rules.limits.text">At most two pieces per square. A fused unit cannot fuse again. The King is left out.</p></div>
     </div>
     <div class="rule">
       <div class="art" id="art-unit"></div>
-      <div><h3>Absolute unit</h3><p>Fusion is permanent. The unit moves together and is captured together: both pieces leave the board at once.</p></div>
+      <div><h3 data-i18n="rules.unit.title">Absolute unit</h3><p data-i18n="rules.unit.text">Fusion is permanent. The unit moves together and is captured together: both pieces leave the board at once.</p></div>
     </div>
     <div class="rule">
       <div class="art" id="art-promo"></div>
-      <div><h3>Promotion</h3><p>If a unit containing a pawn reaches the last rank, only the pawn is promoted. The other piece stays the same.</p></div>
+      <div><h3 data-i18n="rules.promotion.title">Promotion</h3><p data-i18n="rules.promotion.text">If a unit containing a pawn reaches the last rank, only the pawn is promoted. The other piece stays the same.</p></div>
     </div>
     <div class="rule">
       <div class="art row" id="art-castle"></div>
-      <div><h3>Castling, en passant, draws</h3><p>Castling works as in classic chess, but only with a pure King and a pure Rook: neither can be fused. In Classic vs Fusion, the classic side can also capture en passant, but only against an unfused Fusion pawn. A game is drawn when only Kings remain, or a King plus a single Bishop or Knight against a lone King.</p></div>
+      <div><h3 data-i18n="rules.castle.title">Castling, en passant, draws</h3><p data-i18n="rules.castle.text">Castling works as in classic chess, but only with a pure King and a pure Rook: neither can be fused. In Classic vs Fusion, the classic side can also capture en passant, but only against an unfused Fusion pawn. A game is drawn when only Kings remain, or a King plus a single Bishop or Knight against a lone King.</p></div>
     </div>
 
     <div class="rules-head" id="rules-head"></div>
     <div id="rules-dynamic"></div>
 
-    <div class="foot"><button class="btn primary" onclick="closeModal('modal-rules')">Got it, let's play</button></div>
+    <div class="foot"><button class="btn primary" onclick="closeModal('modal-rules')" data-i18n="btn.gotIt">Got it, let's play</button></div>
   </div>
 </div>
 
 <!-- New game -->
 <div class="overlay" id="modal-setup" role="dialog" aria-modal="true" aria-labelledby="setup-title">
   <div class="sheet">
-    <h2 id="setup-title">New game</h2>
-    <p class="lead">Choose the game mode, who to play against, and which rules to use.</p>
+    <h2 id="setup-title" data-i18n="setup.title">New game</h2>
+    <p class="lead" data-i18n="setup.lead">Choose the game mode, who to play against, and which rules to use.</p>
 
     <div class="field" style="margin-top:18px">
-      <div class="field-label" id="lbl-gm">Game mode</div>
+      <div class="field-label" id="lbl-gm" data-i18n="setup.label.gameMode">Game mode</div>
       <div class="seg" role="radiogroup" aria-labelledby="lbl-gm" id="seg-gamemode">
-        <button type="button" role="radio" data-v="fusion" onclick="pickSetup('gameMode', 'fusion')">Fusion Chess</button>
-        <button type="button" role="radio" data-v="versus" onclick="pickSetup('gameMode', 'versus')">Classic vs Fusion</button>
+        <button type="button" role="radio" data-v="fusion" onclick="pickSetup('gameMode', 'fusion')" data-i18n="setup.game.fusion">Fusion Chess</button>
+        <button type="button" role="radio" data-v="versus" onclick="pickSetup('gameMode', 'versus')" data-i18n="setup.game.versus">Classic vs Fusion</button>
       </div>
       <p class="hint short" id="gm-hint"></p>
     </div>
 
     <div class="field" id="field-fusionside" style="margin-top:4px">
-      <div class="field-label" id="lbl-fside">Who plays Fusion</div>
+      <div class="field-label" id="lbl-fside" data-i18n="setup.label.fusionSide">Who plays Fusion</div>
       <div class="seg" role="radiogroup" aria-labelledby="lbl-fside" id="seg-fusionside">
-        <button type="button" role="radio" data-v="white" onclick="pickSetup('fusionSide', 'white')">White</button>
-        <button type="button" role="radio" data-v="black" onclick="pickSetup('fusionSide', 'black')">Black</button>
+        <button type="button" role="radio" data-v="white" onclick="pickSetup('fusionSide', 'white')" data-i18n="side.white">White</button>
+        <button type="button" role="radio" data-v="black" onclick="pickSetup('fusionSide', 'black')" data-i18n="side.black">Black</button>
       </div>
-      <p class="hint short" style="margin-bottom:0">The other side plays classic chess, with no fusions.</p>
+      <p class="hint short" style="margin-bottom:0" data-i18n="setup.fusionSideHint">The other side plays classic chess, with no fusions.</p>
     </div>
 
     <div class="field">
-      <div class="field-label" id="lbl-opp">Opponent</div>
+      <div class="field-label" id="lbl-opp" data-i18n="setup.label.opponent">Opponent</div>
       <div class="seg" role="radiogroup" aria-labelledby="lbl-opp" id="seg-opponent">
-        <button type="button" role="radio" data-v="human" onclick="pickSetup('opponent', 'human')">Two players</button>
-        <button type="button" role="radio" data-v="online" onclick="pickSetup('opponent', 'online')">Online</button>
-        <button type="button" role="radio" data-v="easy" onclick="pickSetup('opponent', 'easy')">Easy AI</button>
-        <button type="button" role="radio" data-v="medium" onclick="pickSetup('opponent', 'medium')">Medium AI</button>
-        <button type="button" role="radio" data-v="hard" onclick="pickSetup('opponent', 'hard')">Strong AI</button>
-        <button type="button" role="radio" data-v="ai_vs_ai" onclick="pickSetup('opponent', 'ai_vs_ai')">AI vs AI</button>
+        <button type="button" role="radio" data-v="human" onclick="pickSetup('opponent', 'human')" data-i18n="setup.opponents.human">Two players</button>
+        <button type="button" role="radio" data-v="online" onclick="pickSetup('opponent', 'online')" data-i18n="setup.opponents.online">Online</button>
+        <button type="button" role="radio" data-v="easy" onclick="pickSetup('opponent', 'easy')" data-i18n="ai.easy">Easy AI</button>
+        <button type="button" role="radio" data-v="medium" onclick="pickSetup('opponent', 'medium')" data-i18n="ai.medium">Medium AI</button>
+        <button type="button" role="radio" data-v="hard" onclick="pickSetup('opponent', 'hard')" data-i18n="ai.hard">Strong AI</button>
+        <button type="button" role="radio" data-v="ai_vs_ai" onclick="pickSetup('opponent', 'ai_vs_ai')" data-i18n="setup.opponents.ai_vs_ai">AI vs AI</button>
       </div>
       <p class="hint" id="opp-hint"></p>
     </div>
 
     <div class="field" id="field-side" style="margin-top:4px">
-      <div class="field-label" id="lbl-side">You play as</div>
+      <div class="field-label" id="lbl-side" data-i18n="setup.label.side">You play as</div>
       <div class="seg" role="radiogroup" aria-labelledby="lbl-side" id="seg-side">
         <button type="button" role="radio" data-v="white" onclick="pickSetup('side', 'white')">White</button>
         <button type="button" role="radio" data-v="black" onclick="pickSetup('side', 'black')">Black</button>
@@ -534,39 +543,39 @@ button { font-family: inherit; color: inherit; }
     <div class="field" id="field-aivai" style="margin-top:4px">
       <div class="field-label" id="lbl-ai-white">White's difficulty</div>
       <div class="seg" role="radiogroup" aria-labelledby="lbl-ai-white" id="seg-ai-white">
-        <button type="button" role="radio" data-v="easy" onclick="pickSetup('aiWhite', 'easy')">Easy</button>
-        <button type="button" role="radio" data-v="medium" onclick="pickSetup('aiWhite', 'medium')">Medium</button>
-        <button type="button" role="radio" data-v="hard" onclick="pickSetup('aiWhite', 'hard')">Strong</button>
+        <button type="button" role="radio" data-v="easy" onclick="pickSetup('aiWhite', 'easy')" data-i18n="ai.short.easy">Easy</button>
+        <button type="button" role="radio" data-v="medium" onclick="pickSetup('aiWhite', 'medium')" data-i18n="ai.short.medium">Medium</button>
+        <button type="button" role="radio" data-v="hard" onclick="pickSetup('aiWhite', 'hard')" data-i18n="ai.short.hard">Strong</button>
       </div>
       <div class="field-label" id="lbl-ai-black" style="margin-top:10px">Black's difficulty</div>
       <div class="seg" role="radiogroup" aria-labelledby="lbl-ai-black" id="seg-ai-black">
-        <button type="button" role="radio" data-v="easy" onclick="pickSetup('aiBlack', 'easy')">Easy</button>
-        <button type="button" role="radio" data-v="medium" onclick="pickSetup('aiBlack', 'medium')">Medium</button>
-        <button type="button" role="radio" data-v="hard" onclick="pickSetup('aiBlack', 'hard')">Strong</button>
+        <button type="button" role="radio" data-v="easy" onclick="pickSetup('aiBlack', 'easy')" data-i18n="ai.short.easy">Easy</button>
+        <button type="button" role="radio" data-v="medium" onclick="pickSetup('aiBlack', 'medium')" data-i18n="ai.short.medium">Medium</button>
+        <button type="button" role="radio" data-v="hard" onclick="pickSetup('aiBlack', 'hard')" data-i18n="ai.short.hard">Strong</button>
       </div>
-      <div class="field-label" id="lbl-ai-speed" style="margin-top:10px">Move speed</div>
+      <div class="field-label" id="lbl-ai-speed" style="margin-top:10px" data-i18n="setup.label.speed">Move speed</div>
       <div class="seg" role="radiogroup" aria-labelledby="lbl-ai-speed" id="seg-ai-speed">
-        <button type="button" role="radio" data-v="slow" onclick="pickSetup('aiSpeed', 'slow')">Slow</button>
-        <button type="button" role="radio" data-v="normal" onclick="pickSetup('aiSpeed', 'normal')">Normal</button>
-        <button type="button" role="radio" data-v="fast" onclick="pickSetup('aiSpeed', 'fast')">Fast</button>
+        <button type="button" role="radio" data-v="slow" onclick="pickSetup('aiSpeed', 'slow')" data-i18n="setup.speeds.slow">Slow</button>
+        <button type="button" role="radio" data-v="normal" onclick="pickSetup('aiSpeed', 'normal')" data-i18n="setup.speeds.normal">Normal</button>
+        <button type="button" role="radio" data-v="fast" onclick="pickSetup('aiSpeed', 'fast')" data-i18n="setup.speeds.fast">Fast</button>
       </div>
-      <p class="hint short">You can pause and step through the game move by move at any time.</p>
+      <p class="hint short" data-i18n="setup.speedHint">You can pause and step through the game move by move at any time.</p>
     </div>
 
     <div class="field" id="field-mode">
-      <div class="field-label" id="lbl-mode">Fusion rules</div>
+      <div class="field-label" id="lbl-mode" data-i18n="setup.label.rules">Fusion rules</div>
       <div class="seg" role="radiogroup" aria-labelledby="lbl-mode" id="seg-mode">
-        <button type="button" role="radio" data-v="balanced" onclick="pickSetup('mode', 'balanced')">Balanced</button>
-        <button type="button" role="radio" data-v="chaos" onclick="pickSetup('mode', 'chaos')">Chaos</button>
-        <button type="button" role="radio" data-v="custom" onclick="pickSetup('mode', 'custom')">Custom</button>
+        <button type="button" role="radio" data-v="balanced" onclick="pickSetup('mode', 'balanced')" data-i18n="mode.balanced">Balanced</button>
+        <button type="button" role="radio" data-v="chaos" onclick="pickSetup('mode', 'chaos')" data-i18n="mode.chaos">Chaos</button>
+        <button type="button" role="radio" data-v="custom" onclick="pickSetup('mode', 'custom')" data-i18n="mode.custom">Custom</button>
       </div>
       <p class="hint short" id="mode-hint"></p>
       <div class="rule-list" id="rule-list"></div>
     </div>
 
     <div class="foot">
-      <button class="btn" onclick="closeModal('modal-setup')">Cancel</button>
-      <button class="btn primary" onclick="applySetup()">Start</button>
+      <button class="btn" onclick="closeModal('modal-setup')" data-i18n="btn.cancel">Cancel</button>
+      <button class="btn primary" onclick="applySetup()" data-i18n="btn.start">Start</button>
     </div>
   </div>
 </div>
@@ -588,11 +597,11 @@ button { font-family: inherit; color: inherit; }
     <p class="lead" id="over-desc"></p>
     <p class="lead" id="over-net" hidden></p>
     <div class="foot">
-      <button class="btn" onclick="closeModal('modal-gameover')">View board</button>
+      <button class="btn" onclick="closeModal('modal-gameover')" data-i18n="btn.viewBoard">View board</button>
       <button class="btn primary" id="btn-play-again" onclick="playAgain()">Play again</button>
     </div>
     <div class="foot tight">
-      <button type="button" class="btn" id="btn-copy-over" onclick="copyHistory()" title="Copy the move and fusion history">Copy game history</button>
+      <button type="button" class="btn" id="btn-copy-over" onclick="copyHistory()" title="Copy the move and fusion history" data-i18n-title="history.copyTitle" data-i18n="btn.copyHistory">Copy game history</button>
     </div>
     <span class="sr-only" id="copy-over-status" aria-live="polite"></span>
   </div>
@@ -601,11 +610,11 @@ button { font-family: inherit; color: inherit; }
 <!-- Resign confirmation (online games in progress) -->
 <div class="overlay" id="modal-resign" role="alertdialog" aria-modal="true" aria-labelledby="resign-title" aria-describedby="resign-lead">
   <div class="sheet center">
-    <h2 id="resign-title">Are you sure you want to resign?</h2>
-    <p class="lead" id="resign-lead">You lose this game by resignation, your opponent wins, and you leave the room.</p>
+    <h2 id="resign-title" data-i18n="resign.title">Are you sure you want to resign?</h2>
+    <p class="lead" id="resign-lead" data-i18n="resign.lead">You lose this game by resignation, your opponent wins, and you leave the room.</p>
     <div class="foot">
-      <button class="btn" id="btn-resign-cancel" onclick="cancelResign()">Keep playing</button>
-      <button class="btn danger" onclick="confirmResign()">Resign</button>
+      <button class="btn" id="btn-resign-cancel" onclick="cancelResign()" data-i18n="btn.keepPlaying">Keep playing</button>
+      <button class="btn danger" onclick="confirmResign()" data-i18n="btn.resign">Resign</button>
     </div>
   </div>
 </div>
@@ -614,22 +623,612 @@ button { font-family: inherit; color: inherit; }
 
 <script>
 /* ==========================================================
+   0. Internacionalização (i18n)
+   ----------------------------------------------------------
+   Como adicionar um idioma: copie o bloco `en` dentro de `translations`, mude a chave (ex.: 'es'),
+   preencha `meta` ({ name, short, htmlLang }) e traduza os valores. O seletor do cabeçalho, a detecção
+   automática, a persistência e o fallback para inglês passam a funcionar sem nenhuma outra mudança.
+   Dica: rode `i18nAudit()` no console para listar chaves que faltam em cada idioma.
+   Interpolação: "{{nome}}" é substituído pelos params de t(chave, { nome: ... }).
+   ========================================================== */
+const LANG_STORAGE_KEY = 'fusionchess.lang';
+const DEFAULT_LANG = 'en';
+
+const translations = {
+  /* ------------------------------------------------------ English ------------------------------------------------------ */
+  en: {
+    meta: { name: 'English', short: 'EN', htmlLang: 'en' },
+    app: { title: 'Fusion Chess', tagline: 'Chess where your pieces can merge.' },
+    lang: { label: 'Language' },
+    a11y: { board: 'Board', chessBoard: 'Chess board', game: 'Game', empty: 'empty', fusedWith: 'fused with', captured: 'Captured pieces' },
+    side: {
+      white: 'White', black: 'Black',
+      you: '{{side}} (you)', withLevel: '{{side}} ({{level}})',
+      versus: '{{a}} vs {{b}}', twoPlayers: 'White vs Black (two players)'
+    },
+    role: { you: 'You', classic: 'Classic', fusion: 'Fusion' },
+    piece: { king: 'King', queen: 'Queen', rook: 'Rook', bishop: 'Bishop', knight: 'Knight', pawn: 'Pawn' },
+    pieceLabel: {
+      white: { king: 'White King', queen: 'White Queen', rook: 'White Rook', bishop: 'White Bishop', knight: 'White Knight', pawn: 'White Pawn' },
+      black: { king: 'Black King', queen: 'Black Queen', rook: 'Black Rook', bishop: 'Black Bishop', knight: 'Black Knight', pawn: 'Black Pawn' }
+    },
+    ai: { easy: 'Easy AI', medium: 'Medium AI', hard: 'Strong AI', short: { easy: 'Easy', medium: 'Medium', hard: 'Strong' } },
+    mode: {
+      balanced: 'Balanced', chaos: 'Chaos', custom: 'Custom',
+      versus: 'Classic vs Fusion', versusSub: 'Fusion: {{side}}', rulesCount: '{{active}} of {{total}} rules'
+    },
+    note: {
+      versus: '<strong>Classic vs Fusion</strong>: {{classic}} plays regular chess, with no fusions. {{fusion}} can move a piece onto another of their own to fuse them. The classic side also has en passant (against unfused pawns); both sides can castle with a pure King and Rook.',
+      fusion: '<strong>Rook + Knight</strong> move as a single unit: in straight lines and in an L. Move a piece onto another of yours to fuse them.',
+      cooldown: 'After a fusion, the next move cannot be a fusion.',
+      castling: 'Castling is allowed only with a pure (unfused) King and Rook.'
+    },
+    btn: {
+      undo: 'Undo', back: 'Back', backTitle: 'Step back one move', backCurrent: 'Back to current',
+      pause: 'Pause', resumeAi: 'Resume', nextMove: 'Next move', flip: 'Flip',
+      sound: 'Sound', on: 'on', off: 'off',
+      joinRoom: 'Join room', rules: 'Rules', newGame: 'New game',
+      cancel: 'Cancel', start: 'Start', close: 'Close', hide: 'Hide', join: 'Join', leave: 'Leave',
+      leaveRoom: 'Leave room', closeRoom: 'Close room', copyCode: 'Copy code',
+      copy: 'Copy', copied: 'Copied!', copyFail: 'Could not copy', copyHistory: 'Copy game history',
+      viewBoard: 'View board', playAgain: 'Play again', gotIt: "Got it, let's play",
+      keepPlaying: 'Keep playing', resign: 'Resign', keepWaiting: 'Keep waiting', tryAgain: 'Try again',
+      acceptRematch: 'Accept rematch', cancelRequest: 'Cancel request',
+      reconnecting: 'Reconnecting…', opponentLeft: 'Opponent left', startingRematch: 'Starting rematch…'
+    },
+    review: {
+      prev: 'Previous move', next: 'Next move', playPause: 'Play / pause', play: 'Play', pause: 'Pause',
+      pos: 'Move {{current}} / {{total}}'
+    },
+    history: {
+      title: 'Moves', empty: 'Moves will appear here.',
+      copyTitle: 'Copy the move and fusion history', copiedStatus: 'History copied to the clipboard.'
+    },
+    status: {
+      turn: "{{side}}'s turn",
+      review: 'Match review', reviewSub: 'Move {{current}} of {{total}}', goResult: 'Go to result', backCurrent: 'Back to current',
+      wins: '{{side}} wins', resigned: '{{side}} resigned. Start a new game.',
+      checkmateNew: 'Checkmate. Start a new game.', checkmateUndo: 'Checkmate. Use Undo or start a new game.',
+      draw: 'Draw', drawFallback: 'Draw.',
+      drawReason: {
+        stalemate: 'Stalemate: no legal moves.', repetition: 'Same position three times.',
+        'fifty-move': 'The 50-move rule.', insufficient: 'Insufficient material to checkmate.'
+      },
+      checkAi: "The AI's king is in check.", checkYou: 'Your king is in check.',
+      thinking: 'The AI is thinking…', promo: 'Choose the promotion piece.',
+      hintClassic: 'Dot: move. Red ring: capture. Dashed ring: castle. Classic chess: no fusion.',
+      hintBlocked: 'Dot: move. Red ring: capture. Fusion blocked this turn.',
+      hintNormal: 'Dot: move. Red ring: capture. Violet ring: fuse.',
+      noMoves: 'This piece has no legal moves right now.',
+      mergeBlocked: '{{side}} fused on the previous move: now they can only move or capture.',
+      tap: 'Tap a piece to see its moves.'
+    },
+    tag: { inCheck: 'in check', thinking: 'thinking…', playing: 'playing', playingNoFusion: 'playing · no fusion' },
+    promo: {
+      title: 'Promote the pawn', lead: 'Choose the new piece. The other half of the unit stays the same.',
+      leadSame: 'The pawn is fused with {{piece}}: it must become a different piece.',
+      already: 'Already the fused piece', ban: "Can't fuse with {{piece}}"
+    },
+    over: {
+      title: {
+        checkmate: 'Checkmate', stalemate: 'Draw by stalemate', insufficient: 'Draw by insufficient material',
+        repetition: 'Draw by repetition', fifty: 'Draw by the 50-move rule', resigned: 'Opponent resigned'
+      },
+      desc: {
+        stalemate: 'The player to move has no legal moves.',
+        insufficient: 'Neither side has enough pieces left to deliver checkmate.',
+        repetition: 'The same position has occurred three times.',
+        fifty: '50 moves have passed for each side with no capture, fusion, or pawn move.',
+        resigned: 'Your opponent resigned. You won the game.'
+      },
+      won: {
+        pvp: '{{side}} won the game.', you: 'You won the game.',
+        both: '{{name}} won the game.', ai: 'The {{level}} won the game.'
+      }
+    },
+    resign: {
+      title: 'Are you sure you want to resign?',
+      lead: 'You lose this game by resignation, your opponent wins, and you leave the room.'
+    },
+    rules: {
+      title: 'Fusion rules', viewTitle: 'View the rules for this game',
+      leadFusion: 'Chess as usual, with one extra move: fuse two of your pieces into one.',
+      leadVersus: 'One side plays classic chess, with no fusions. The other plays Fusion Chess and can fuse two of its pieces into one. In this game, {{classic}} plays classic and {{fusion}} plays Fusion.',
+      fuse: { title: 'Fuse', text: 'Move a piece onto another of the same color (violet square). They become one unit with the moves of both. Fusing uses up your turn.' },
+      limits: { title: 'Limits', text: 'At most two pieces per square. A fused unit cannot fuse again. The King is left out.' },
+      unit: { title: 'Absolute unit', text: 'Fusion is permanent. The unit moves together and is captured together: both pieces leave the board at once.' },
+      promotion: { title: 'Promotion', text: 'If a unit containing a pawn reaches the last rank, only the pawn is promoted. The other piece stays the same.' },
+      castle: { title: 'Castling, en passant, draws', text: 'Castling works as in classic chess, but only with a pure King and a pure Rook: neither can be fused. In Classic vs Fusion, the classic side can also capture en passant, but only against an unfused Fusion pawn. A game is drawn when only Kings remain, or a King plus a single Bishop or Knight against a lone King.' },
+      head: 'Rules for this game: {{mode}} <span>({{active}} of {{total}} active)</span>',
+      active: 'Active', disabled: 'Disabled',
+      badgeCooldown: '1 turn', badgePromo: '≠ {{piece}}',
+      noKnightQueen: {
+        title: 'Knight + Queen', short: 'Knight and Queen cannot fuse.',
+        long: 'Knight and Queen never fuse. This also applies to promotion: Pawn + Knight cannot become Queen + Knight.'
+      },
+      noRookBishop: {
+        title: 'Rook + Bishop', short: 'Rook and Bishop cannot fuse.',
+        long: 'Rook and Bishop never fuse. This also applies to promotion: Pawn + Rook cannot become Bishop + Rook.'
+      },
+      cooldown: {
+        title: 'Fusion cooldown', short: 'After fusing, the next move cannot be a fusion.',
+        long: 'After fusing, your next move must be a regular move or a capture. Fused on your 1st move? You can only fuse again on your 3rd.'
+      },
+      promoDiff: {
+        title: 'Different promotion', short: 'A fused pawn can only become a piece different from its partner.',
+        long: 'On promotion, the fused pawn must become a piece different from its partner. Rook + Pawn, for example, can never become Rook + Rook.'
+      }
+    },
+    setup: {
+      title: 'New game', lead: 'Choose the game mode, who to play against, and which rules to use.',
+      label: { gameMode: 'Game mode', fusionSide: 'Who plays Fusion', opponent: 'Opponent', side: 'You play as', speed: 'Move speed', rules: 'Fusion rules' },
+      game: { fusion: 'Fusion Chess', versus: 'Classic vs Fusion' },
+      gameHint: {
+        fusion: 'Fusion Chess as usual: both sides can fuse pieces.',
+        versus: 'One side plays classic chess with the normal rules. The other plays Fusion Chess in Balanced mode. Works against a person, against the AI, or AI vs AI.'
+      },
+      fusionSideHint: 'The other side plays classic chess, with no fusions.',
+      opponents: { human: 'Two players', online: 'Online', ai_vs_ai: 'AI vs AI' },
+      opponentHint: {
+        human: 'Two players on the same device, each on their own turn.',
+        easy: "Sees the opponent's reply and avoids losing pieces for free, but doesn't plan ahead and makes mistakes. Good for learning fusion.",
+        medium: 'Calculates three moves ahead (four in endgames), trades pieces wisely and fuses when it pays off. Takes up to 2 seconds per move.',
+        hard: 'Calculates four moves ahead (five in endgames) and plays very precisely. May take up to 3.5 seconds per move.',
+        online: 'Play a friend on another device. You get a room code to share; they type it in "Join room". No account needed.',
+        ai_vs_ai: "The two AIs play each other on their own. Choose each side's difficulty and the speed below — you can pause and step through move by move whenever you like."
+      },
+      diff: "{{side}}'s difficulty",
+      speeds: { slow: 'Slow', normal: 'Normal', fast: 'Fast' },
+      speedHint: 'You can pause and step through the game move by move at any time.',
+      modeHint: {
+        balanced: 'All rules on. More strategic fusions and evenly matched games.',
+        chaos: 'No rules on: any piece except the King fuses with any other, with no cooldown and no limits on promotion.',
+        custom: 'Choose below which rules are active in this game.'
+      }
+    },
+    hist: {
+      title: 'FUSION CHESS: game history', game: 'Game: {{game}}',
+      mode: 'Mode: Classic vs Fusion ({{classic}} plays classic, {{fusion}} plays Fusion)',
+      rules: 'Rules: {{mode}} ({{detail}})', rulesActive: 'active: {{list}}', rulesNone: 'no optional rules active',
+      status: 'Status: {{status}}', moves: 'MOVES', fusions: 'FUSIONS', noFusions: 'No fusions so far.', none: 'none',
+      fusionItem: '{{into}} + {{piece}} at {{to}} (move {{n}})', side: '{{side}}: {{text}}',
+      inProgress: 'in progress',
+      resignation: '{{winner}} won by resignation ({{loser}} resigned)', checkmate: 'checkmate, {{winner}} won',
+      draw: {
+        stalemate: 'draw by stalemate', repetition: 'draw by repetition', 'fifty-move': 'draw by the 50-move rule',
+        insufficient: 'draw by insufficient material', fallback: 'draw'
+      }
+    },
+    desc: {
+      fusedUnit: '{{units}} (fused unit)',
+      castle: 'CASTLING {{side}}: {{king}} {{from}} → {{to}}, {{rook}} {{rookFrom}} → {{rookTo}}',
+      kingside: 'kingside (O-O)', queenside: 'queenside (O-O-O)',
+      fusion: 'FUSION: {{a}} {{from}} fused with {{b}} {{to}} → unit {{b}} + {{a}} at {{to}}',
+      capture: '{{who}} {{from}} × {{to}} (captured {{what}}{{ep}})',
+      capturedUnit: 'unit {{units}}', ep: ', en passant',
+      move: '{{who}} {{from}} → {{to}}',
+      promotion: ' | Promotion: {{pawn}} → {{piece}}', promotionUnit: ' (unit now: {{units}})',
+      checkmate: ' | checkmate', check: ' | check'
+    },
+    online: {
+      title: 'Join a room', lead: 'Type the code the host shared with you. No account needed.',
+      codePlaceholder: 'CODE', codeLabel: 'Room code',
+      reconnectingTitle: 'Reconnecting…',
+      reconnectingLead: 'Connection lost. Trying to get back into room {{code}} for up to {{seconds}} s. Your game is safe and paused.',
+      closedHostTitle: 'Opponent disconnected', closedGuestTitle: 'Connection lost',
+      closedHostLead: 'Your opponent did not come back in time. The game is kept: they can still rejoin with code {{code}}.',
+      closedGuestLead: 'Could not get back into room {{code}}. The game is kept: you can try again.',
+      hostTitle: 'Room created', opening: 'Creating the room…',
+      hostLead: 'Send this code to your friend. The game starts as soon as they join. To change rules, close the room and start a new online game.',
+      connectedTitle: 'Connected', connectedLead: 'You are in room {{code}}, playing {{side}}.',
+      joiningTitle: 'Joining…', joiningLead: 'Connecting to room {{code}}…',
+      slow: 'Taking longer than usual. Some networks (4G, corporate Wi-Fi) need a relay; it can take up to 20 s.'
+    },
+    net: {
+      reconnectingLine: 'Connection lost · reconnecting… {{seconds}}s (your game is safe)',
+      closedLine: 'Your opponent did not come back.',
+      onlineLine: 'Online · room {{code}} · you play {{side}}',
+      rematchWanted: ' · your opponent wants a rematch', rematchWaiting: ' · waiting for opponent…',
+      roomLine: 'Room {{code}} · {{state}}', hostWaiting: 'waiting for your opponent', connecting: 'connecting…',
+      offline: 'offline',
+      pingTitle: 'Connection: {{quality}}{{route}}{{unstable}}', unstable: ' (unstable: a drop may be coming)',
+      quality: { good: 'good', fair: 'fair', poor: 'poor', off: 'offline', idle: 'idle' },
+      route: { relay: 'relayed (TURN)', direct: 'direct (P2P)' },
+      err: {
+        needInternet: 'Online mode needs an internet connection.',
+        codeShort: 'Type the 5-character room code.',
+        ice: 'Could not establish a connection. Your network (4G/corporate Wi-Fi) may block peer-to-peer traffic: a TURN relay server is needed.',
+        joinFail: 'Could not connect to the room. It may be full, or your network may be blocking the connection.',
+        roomNotFound: 'Room not found. Check the code with the host.',
+        signal: 'Could not reach the matchmaking server. Check your internet and try again.',
+        generic: 'Could not connect. Check your connection and try again.',
+        createRoom: 'Could not create the room. Check your connection and try again.',
+        roomClosed: 'The room was closed by an error. Create a new one.',
+        joinTimeout: 'Could not connect to the room. Check the code and your network, then try again. If it keeps failing, a TURN relay server may be required.'
+      },
+      toast: {
+        unstable: 'Unstable connection… the game will wait if it drops.',
+        lost: 'Connection lost. Trying to reconnect…',
+        offline: 'You are offline. Waiting for the network…',
+        restored: 'Connection restored.',
+        outOfSync: 'Game out of sync. Please leave the room and start a new one.',
+        resync: 'Re-synchronising the game…',
+        backInSync: 'Back in sync.',
+        syncFail: 'Could not sync with the host. Leave the room and join again.',
+        resynced: 'Game re-synchronised.',
+        rematchBusy: 'Your opponent cannot rematch right now.',
+        rematchTimeout: 'No answer to the rematch request. You can try again.',
+        opponentGone: 'Your opponent is no longer in the room.',
+        rematchWanted: 'Your opponent wants a rematch.'
+      },
+      over: {
+        reconnecting: 'Connection lost. Waiting for your opponent to come back…',
+        left: 'Your opponent is no longer in the room, so a rematch is not possible.',
+        sent: 'Rematch requested: waiting for your opponent. Colors will be swapped.',
+        received: 'Your opponent wants a rematch. Colors will be swapped.'
+      }
+    }
+  },
+
+  /* ------------------------------------------------------ Português (Brasil) ------------------------------------------------------ */
+  'pt-BR': {
+    meta: { name: 'Português (Brasil)', short: 'PT', htmlLang: 'pt-BR' },
+    app: { title: 'Fusion Chess', tagline: 'Xadrez em que as suas peças podem se fundir.' },
+    lang: { label: 'Idioma' },
+    a11y: { board: 'Tabuleiro', chessBoard: 'Tabuleiro de xadrez', game: 'Partida', empty: 'vazia', fusedWith: 'fundido com', captured: 'Peças capturadas' },
+    side: {
+      white: 'Brancas', black: 'Pretas',
+      you: '{{side}} (você)', withLevel: '{{side}} ({{level}})',
+      versus: '{{a}} vs {{b}}', twoPlayers: 'Brancas vs Pretas (dois jogadores)'
+    },
+    role: { you: 'Você', classic: 'Clássico', fusion: 'Fusion' },
+    piece: { king: 'Rei', queen: 'Dama', rook: 'Torre', bishop: 'Bispo', knight: 'Cavalo', pawn: 'Peão' },
+    pieceLabel: {
+      white: { king: 'Rei branco', queen: 'Dama branca', rook: 'Torre branca', bishop: 'Bispo branco', knight: 'Cavalo branco', pawn: 'Peão branco' },
+      black: { king: 'Rei preto', queen: 'Dama preta', rook: 'Torre preta', bishop: 'Bispo preto', knight: 'Cavalo preto', pawn: 'Peão preto' }
+    },
+    ai: { easy: 'IA Fácil', medium: 'IA Média', hard: 'IA Forte', short: { easy: 'Fácil', medium: 'Média', hard: 'Forte' } },
+    mode: {
+      balanced: 'Equilibrado', chaos: 'Caos', custom: 'Personalizado',
+      versus: 'Clássico vs Fusion', versusSub: 'Fusion: {{side}}', rulesCount: '{{active}} de {{total}} regras'
+    },
+    note: {
+      versus: '<strong>Clássico vs Fusion</strong>: as {{classic}} jogam xadrez comum, sem fusões. As {{fusion}} podem mover uma peça para cima de outra delas para fundi-las. O lado clássico também tem en passant (contra peões não fundidos); os dois lados podem fazer roque com Rei e Torre puros.',
+      fusion: '<strong>Torre + Cavalo</strong> se movem como uma única unidade: em linha reta e em L. Mova uma peça para cima de outra sua para fundi-las.',
+      cooldown: 'Depois de uma fusão, a jogada seguinte não pode ser uma fusão.',
+      castling: 'O roque só é permitido com Rei e Torre puros (não fundidos).'
+    },
+    btn: {
+      undo: 'Desfazer', back: 'Voltar', backTitle: 'Voltar uma jogada', backCurrent: 'Voltar ao atual',
+      pause: 'Pausar', resumeAi: 'Continuar', nextMove: 'Próxima jogada', flip: 'Girar',
+      sound: 'Som', on: 'ligado', off: 'desligado',
+      joinRoom: 'Entrar em sala', rules: 'Regras', newGame: 'Novo jogo',
+      cancel: 'Cancelar', start: 'Iniciar', close: 'Fechar', hide: 'Ocultar', join: 'Entrar', leave: 'Sair',
+      leaveRoom: 'Sair da sala', closeRoom: 'Fechar sala', copyCode: 'Copiar código',
+      copy: 'Copiar', copied: 'Copiado!', copyFail: 'Não foi possível copiar', copyHistory: 'Copiar histórico da partida',
+      viewBoard: 'Ver tabuleiro', playAgain: 'Jogar novamente', gotIt: 'Entendi, vamos jogar',
+      keepPlaying: 'Continuar jogando', resign: 'Desistir', keepWaiting: 'Continuar esperando', tryAgain: 'Tentar de novo',
+      acceptRematch: 'Aceitar revanche', cancelRequest: 'Cancelar pedido',
+      reconnecting: 'Reconectando…', opponentLeft: 'Adversário saiu', startingRematch: 'Iniciando revanche…'
+    },
+    review: {
+      prev: 'Jogada anterior', next: 'Próxima jogada', playPause: 'Reproduzir / pausar', play: 'Reproduzir', pause: 'Pausar',
+      pos: 'Jogada {{current}} / {{total}}'
+    },
+    history: {
+      title: 'Jogadas', empty: 'As jogadas aparecerão aqui.',
+      copyTitle: 'Copiar o histórico de jogadas e fusões', copiedStatus: 'Histórico copiado para a área de transferência.'
+    },
+    status: {
+      turn: 'Vez das {{side}}',
+      review: 'Revisão da partida', reviewSub: 'Jogada {{current}} de {{total}}', goResult: 'Ver resultado', backCurrent: 'Voltar ao atual',
+      wins: '{{side}} vencem', resigned: 'As {{side}} desistiram. Inicie um novo jogo.',
+      checkmateNew: 'Xeque-mate. Inicie um novo jogo.', checkmateUndo: 'Xeque-mate. Use Desfazer ou inicie um novo jogo.',
+      draw: 'Empate', drawFallback: 'Empate.',
+      drawReason: {
+        stalemate: 'Afogamento: sem jogadas legais.', repetition: 'Mesma posição três vezes.',
+        'fifty-move': 'Regra dos 50 lances.', insufficient: 'Material insuficiente para dar xeque-mate.'
+      },
+      checkAi: 'O rei da IA está em xeque.', checkYou: 'Seu rei está em xeque.',
+      thinking: 'A IA está pensando…', promo: 'Escolha a peça da promoção.',
+      hintClassic: 'Ponto: mover. Anel vermelho: capturar. Anel tracejado: roque. Xadrez clássico: sem fusão.',
+      hintBlocked: 'Ponto: mover. Anel vermelho: capturar. Fusão bloqueada neste turno.',
+      hintNormal: 'Ponto: mover. Anel vermelho: capturar. Anel violeta: fundir.',
+      noMoves: 'Esta peça não tem jogadas legais agora.',
+      mergeBlocked: 'As {{side}} fundiram na jogada anterior: agora só podem mover ou capturar.',
+      tap: 'Toque em uma peça para ver as jogadas dela.'
+    },
+    tag: { inCheck: 'em xeque', thinking: 'pensando…', playing: 'jogando', playingNoFusion: 'jogando · sem fusão' },
+    promo: {
+      title: 'Promover o peão', lead: 'Escolha a nova peça. A outra metade da unidade continua igual.',
+      leadSame: 'O peão está fundido com {{piece}}: ele deve virar uma peça diferente.',
+      already: 'Já é a peça fundida', ban: 'Não pode fundir com {{piece}}'
+    },
+    over: {
+      title: {
+        checkmate: 'Xeque-mate', stalemate: 'Empate por afogamento', insufficient: 'Empate por material insuficiente',
+        repetition: 'Empate por repetição', fifty: 'Empate pela regra dos 50 lances', resigned: 'O adversário desistiu'
+      },
+      desc: {
+        stalemate: 'O jogador da vez não tem jogadas legais.',
+        insufficient: 'Nenhum dos lados tem peças suficientes para dar xeque-mate.',
+        repetition: 'A mesma posição ocorreu três vezes.',
+        fifty: 'Passaram-se 50 lances para cada lado sem captura, fusão ou movimento de peão.',
+        resigned: 'Seu adversário desistiu. Você venceu a partida.'
+      },
+      won: {
+        pvp: 'As {{side}} venceram a partida.', you: 'Você venceu a partida.',
+        both: 'As {{name}} venceram a partida.', ai: 'A {{level}} venceu a partida.'
+      }
+    },
+    resign: {
+      title: 'Tem certeza de que quer desistir?',
+      lead: 'Você perde esta partida por desistência, seu adversário vence e você sai da sala.'
+    },
+    rules: {
+      title: 'Regras de fusão', viewTitle: 'Ver as regras desta partida',
+      leadFusion: 'Xadrez como de costume, com um movimento extra: funda duas das suas peças em uma.',
+      leadVersus: 'Um lado joga xadrez clássico, sem fusões. O outro joga Fusion Chess e pode fundir duas de suas peças em uma. Nesta partida, as {{classic}} jogam o clássico e as {{fusion}} jogam Fusion.',
+      fuse: { title: 'Fundir', text: 'Mova uma peça para cima de outra da mesma cor (casa violeta). Elas viram uma única unidade, com os movimentos das duas. Fundir gasta o seu turno.' },
+      limits: { title: 'Limites', text: 'No máximo duas peças por casa. Uma unidade fundida não pode se fundir de novo. O Rei fica de fora.' },
+      unit: { title: 'Unidade absoluta', text: 'A fusão é permanente. A unidade se move junta e é capturada junta: as duas peças saem do tabuleiro ao mesmo tempo.' },
+      promotion: { title: 'Promoção', text: 'Se uma unidade que contém um peão chega à última fileira, só o peão é promovido. A outra peça continua a mesma.' },
+      castle: { title: 'Roque, en passant e empates', text: 'O roque funciona como no xadrez clássico, mas só com um Rei e uma Torre puros: nenhum dos dois pode estar fundido. No Clássico vs Fusion, o lado clássico também pode capturar en passant, mas apenas contra um peão Fusion não fundido. A partida empata quando restam só os Reis, ou um Rei com um único Bispo ou Cavalo contra um Rei sozinho.' },
+      head: 'Regras desta partida: {{mode}} <span>({{active}} de {{total}} ativas)</span>',
+      active: 'Ativa', disabled: 'Desativada',
+      badgeCooldown: '1 turno', badgePromo: '≠ {{piece}}',
+      noKnightQueen: {
+        title: 'Cavalo + Dama', short: 'Cavalo e Dama não podem se fundir.',
+        long: 'Cavalo e Dama nunca se fundem. Isso vale também na promoção: Peão + Cavalo não pode virar Dama + Cavalo.'
+      },
+      noRookBishop: {
+        title: 'Torre + Bispo', short: 'Torre e Bispo não podem se fundir.',
+        long: 'Torre e Bispo nunca se fundem. Isso vale também na promoção: Peão + Torre não pode virar Bispo + Torre.'
+      },
+      cooldown: {
+        title: 'Intervalo entre fusões', short: 'Depois de fundir, a jogada seguinte não pode ser uma fusão.',
+        long: 'Depois de fundir, sua próxima jogada deve ser um movimento comum ou uma captura. Fundiu na 1ª jogada? Só poderá fundir de novo na 3ª.'
+      },
+      promoDiff: {
+        title: 'Promoção diferente', short: 'Um peão fundido só pode virar uma peça diferente da sua parceira.',
+        long: 'Na promoção, o peão fundido deve virar uma peça diferente da sua parceira. Torre + Peão, por exemplo, nunca pode virar Torre + Torre.'
+      }
+    },
+    setup: {
+      title: 'Novo jogo', lead: 'Escolha o modo de jogo, contra quem jogar e quais regras usar.',
+      label: { gameMode: 'Modo de jogo', fusionSide: 'Quem joga Fusion', opponent: 'Oponente', side: 'Você joga de', speed: 'Velocidade das jogadas', rules: 'Regras de fusão' },
+      game: { fusion: 'Fusion Chess', versus: 'Clássico vs Fusion' },
+      gameHint: {
+        fusion: 'Fusion Chess como de costume: os dois lados podem fundir peças.',
+        versus: 'Um lado joga xadrez clássico, com as regras normais. O outro joga Fusion Chess no modo Equilibrado. Funciona contra uma pessoa, contra a IA ou IA vs IA.'
+      },
+      fusionSideHint: 'O outro lado joga xadrez clássico, sem fusões.',
+      opponents: { human: 'Dois jogadores', online: 'Online', ai_vs_ai: 'IA vs IA' },
+      opponentHint: {
+        human: 'Dois jogadores no mesmo aparelho, cada um na sua vez.',
+        easy: 'Vê a resposta do adversário e evita perder peças de graça, mas não planeja à frente e comete erros. Bom para aprender a fusão.',
+        medium: 'Calcula três jogadas à frente (quatro nos finais), troca peças com critério e funde quando compensa. Leva até 2 segundos por jogada.',
+        hard: 'Calcula quatro jogadas à frente (cinco nos finais) e joga com muita precisão. Pode levar até 3,5 segundos por jogada.',
+        online: 'Jogue com um amigo em outro aparelho. Você recebe um código de sala para compartilhar; ele digita em "Entrar em sala". Não precisa de conta.',
+        ai_vs_ai: 'As duas IAs jogam entre si sozinhas. Escolha a dificuldade de cada lado e a velocidade abaixo — você pode pausar e avançar jogada por jogada quando quiser.'
+      },
+      diff: 'Dificuldade das {{side}}',
+      speeds: { slow: 'Lenta', normal: 'Normal', fast: 'Rápida' },
+      speedHint: 'Você pode pausar e avançar jogada por jogada a qualquer momento.',
+      modeHint: {
+        balanced: 'Todas as regras ativas. Fusões mais estratégicas e partidas mais parelhas.',
+        chaos: 'Nenhuma regra ativa: qualquer peça, exceto o Rei, funde com qualquer outra, sem intervalo e sem limites na promoção.',
+        custom: 'Escolha abaixo quais regras ficam ativas nesta partida.'
+      }
+    },
+    hist: {
+      title: 'FUSION CHESS: histórico da partida', game: 'Partida: {{game}}',
+      mode: 'Modo: Clássico vs Fusion (as {{classic}} jogam o clássico, as {{fusion}} jogam Fusion)',
+      rules: 'Regras: {{mode}} ({{detail}})', rulesActive: 'ativas: {{list}}', rulesNone: 'nenhuma regra opcional ativa',
+      status: 'Situação: {{status}}', moves: 'JOGADAS', fusions: 'FUSÕES', noFusions: 'Nenhuma fusão até agora.', none: 'nenhuma',
+      fusionItem: '{{into}} + {{piece}} em {{to}} (jogada {{n}})', side: '{{side}}: {{text}}',
+      inProgress: 'em andamento',
+      resignation: 'as {{winner}} venceram por desistência (as {{loser}} desistiram)', checkmate: 'xeque-mate, as {{winner}} venceram',
+      draw: {
+        stalemate: 'empate por afogamento', repetition: 'empate por repetição', 'fifty-move': 'empate pela regra dos 50 lances',
+        insufficient: 'empate por material insuficiente', fallback: 'empate'
+      }
+    },
+    desc: {
+      fusedUnit: '{{units}} (unidade fundida)',
+      castle: 'ROQUE {{side}}: {{king}} {{from}} → {{to}}, {{rook}} {{rookFrom}} → {{rookTo}}',
+      kingside: 'pequeno (O-O)', queenside: 'grande (O-O-O)',
+      fusion: 'FUSÃO: {{a}} {{from}} fundiu-se com {{b}} {{to}} → unidade {{b}} + {{a}} em {{to}}',
+      capture: '{{who}} {{from}} × {{to}} (capturou {{what}}{{ep}})',
+      capturedUnit: 'unidade {{units}}', ep: ', en passant',
+      move: '{{who}} {{from}} → {{to}}',
+      promotion: ' | Promoção: {{pawn}} → {{piece}}', promotionUnit: ' (unidade agora: {{units}})',
+      checkmate: ' | xeque-mate', check: ' | xeque'
+    },
+    online: {
+      title: 'Entrar em uma sala', lead: 'Digite o código que o anfitrião compartilhou com você. Não precisa de conta.',
+      codePlaceholder: 'CÓDIGO', codeLabel: 'Código da sala',
+      reconnectingTitle: 'Reconectando…',
+      reconnectingLead: 'Conexão perdida. Tentando voltar à sala {{code}} por até {{seconds}} s. Sua partida está segura e pausada.',
+      closedHostTitle: 'Adversário desconectado', closedGuestTitle: 'Conexão perdida',
+      closedHostLead: 'Seu adversário não voltou a tempo. A partida foi mantida: ele ainda pode voltar com o código {{code}}.',
+      closedGuestLead: 'Não foi possível voltar à sala {{code}}. A partida foi mantida: você pode tentar de novo.',
+      hostTitle: 'Sala criada', opening: 'Criando a sala…',
+      hostLead: 'Envie este código ao seu amigo. A partida começa assim que ele entrar. Para mudar as regras, feche a sala e inicie um novo jogo online.',
+      connectedTitle: 'Conectado', connectedLead: 'Você está na sala {{code}}, jogando de {{side}}.',
+      joiningTitle: 'Entrando…', joiningLead: 'Conectando à sala {{code}}…',
+      slow: 'Está demorando mais que o normal. Algumas redes (4G, Wi-Fi corporativo) precisam de um relay; pode levar até 20 s.'
+    },
+    net: {
+      reconnectingLine: 'Conexão perdida · reconectando… {{seconds}}s (sua partida está segura)',
+      closedLine: 'Seu adversário não voltou.',
+      onlineLine: 'Online · sala {{code}} · você joga de {{side}}',
+      rematchWanted: ' · seu adversário quer a revanche', rematchWaiting: ' · aguardando o adversário…',
+      roomLine: 'Sala {{code}} · {{state}}', hostWaiting: 'aguardando seu adversário', connecting: 'conectando…',
+      offline: 'offline',
+      pingTitle: 'Conexão: {{quality}}{{route}}{{unstable}}', unstable: ' (instável: pode haver uma queda)',
+      quality: { good: 'boa', fair: 'razoável', poor: 'ruim', off: 'offline', idle: 'ociosa' },
+      route: { relay: 'via relay (TURN)', direct: 'direta (P2P)' },
+      err: {
+        needInternet: 'O modo online precisa de conexão com a internet.',
+        codeShort: 'Digite o código de 5 caracteres da sala.',
+        ice: 'Não foi possível estabelecer a conexão. Sua rede (4G/Wi-Fi corporativo) pode bloquear tráfego peer-to-peer: é preciso um servidor de relay TURN.',
+        joinFail: 'Não foi possível conectar à sala. Ela pode estar cheia, ou sua rede pode estar bloqueando a conexão.',
+        roomNotFound: 'Sala não encontrada. Confira o código com o anfitrião.',
+        signal: 'Não foi possível acessar o servidor de pareamento. Verifique sua internet e tente de novo.',
+        generic: 'Não foi possível conectar. Verifique sua conexão e tente de novo.',
+        createRoom: 'Não foi possível criar a sala. Verifique sua conexão e tente de novo.',
+        roomClosed: 'A sala foi fechada por um erro. Crie uma nova.',
+        joinTimeout: 'Não foi possível conectar à sala. Confira o código e sua rede e tente de novo. Se continuar falhando, pode ser necessário um servidor de relay TURN.'
+      },
+      toast: {
+        unstable: 'Conexão instável… a partida vai esperar se ela cair.',
+        lost: 'Conexão perdida. Tentando reconectar…',
+        offline: 'Você está offline. Aguardando a rede…',
+        restored: 'Conexão restaurada.',
+        outOfSync: 'Partida dessincronizada. Saia da sala e crie uma nova.',
+        resync: 'Ressincronizando a partida…',
+        backInSync: 'Sincronizado novamente.',
+        syncFail: 'Não foi possível sincronizar com o anfitrião. Saia da sala e entre de novo.',
+        resynced: 'Partida ressincronizada.',
+        rematchBusy: 'Seu adversário não pode jogar a revanche agora.',
+        rematchTimeout: 'Sem resposta ao pedido de revanche. Você pode tentar de novo.',
+        opponentGone: 'Seu adversário não está mais na sala.',
+        rematchWanted: 'Seu adversário quer a revanche.'
+      },
+      over: {
+        reconnecting: 'Conexão perdida. Aguardando seu adversário voltar…',
+        left: 'Seu adversário não está mais na sala, então a revanche não é possível.',
+        sent: 'Revanche solicitada: aguardando seu adversário. As cores serão trocadas.',
+        received: 'Seu adversário quer a revanche. As cores serão trocadas.'
+      }
+    }
+  }
+};
+
+/* ---------- Helper de tradução ---------- */
+const warnedKeys = new Set();
+const resolveKey = (dict, key) => key.split('.').reduce((o, k) => (o && typeof o === 'object' ? o[k] : undefined), dict);
+
+/* t('status.turn', { side: 'White' }) → busca no idioma atual, cai para o inglês, e por fim devolve a própria chave */
+function t(key, params) {
+  let s = resolveKey(translations[currentLang], key);
+  if (typeof s !== 'string') s = resolveKey(translations[DEFAULT_LANG], key);
+  if (typeof s !== 'string') {
+    if (!warnedKeys.has(key)) { warnedKeys.add(key); console.warn(`[i18n] missing key: ${key}`); }
+    return key;
+  }
+  return params ? s.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (m, name) => (params[name] != null ? String(params[name]) : m)) : s;
+}
+
+/* Objeto { chave: texto } cujos valores são calculados a cada leitura (sempre no idioma atual).
+   Mantém a API antiga (NAMES[type], SIDE_NAME[color]…) sem texto fixo em lugar nenhum. */
+function i18nDict(prefix, keys) {
+  const o = {};
+  keys.forEach((k) => Object.defineProperty(o, k, { enumerable: true, get: () => t(`${prefix}.${k}`) }));
+  return o;
+}
+
+/* ---------- Idioma atual: detecção + persistência ---------- */
+const supportedLangs = () => Object.keys(translations);
+
+function normalizeLang(code) {
+  if (!code) return null;
+  const c = String(code).toLowerCase();
+  const langs = supportedLangs();
+  return langs.find((l) => l.toLowerCase() === c) || langs.find((l) => l.toLowerCase().split('-')[0] === c.split('-')[0]) || null;
+}
+
+function detectLang() {
+  let saved = null;
+  try { saved = localStorage.getItem(LANG_STORAGE_KEY); } catch (e) { /* armazenamento indisponível */ }
+  const fromSaved = normalizeLang(saved);
+  if (fromSaved) return fromSaved;
+  const prefs = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language]);
+  for (const p of prefs) { const m = normalizeLang(p); if (m) return m; }
+  return DEFAULT_LANG;
+}
+
+let currentLang = detectLang();
+
+function setLang(lang) {
+  const next = normalizeLang(lang);
+  if (!next || next === currentLang) return;
+  currentLang = next;
+  try { localStorage.setItem(LANG_STORAGE_KEY, next); } catch (e) { /* ignora */ }
+  updateLocalization();
+}
+
+/* Seletor do cabeçalho: gerado a partir de `translations`, então um novo idioma aparece sozinho */
+function buildLangSwitch() {
+  const box = $('lang-switch');
+  if (!box) return;
+  box.innerHTML = supportedLangs().map((l) => {
+    const m = translations[l].meta;
+    return `<button type="button" class="lang-btn" data-lang="${l}" lang="${m.htmlLang}" title="${m.name}" aria-label="${m.name}" onclick="setLang('${l}')">${m.short}</button>`;
+  }).join('');
+}
+function paintLangSwitch() {
+  document.querySelectorAll('#lang-switch .lang-btn').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === currentLang)));
+}
+
+/* Atualiza todo o HTML declarativo (data-i18n*) e repinta tudo o que é gerado por JavaScript */
+function updateLocalization() {
+  document.documentElement.lang = t('meta.htmlLang');
+  document.title = t('app.title');
+  document.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-html]').forEach((el) => { el.innerHTML = t(el.dataset.i18nHtml); });
+  ['title', 'aria-label', 'placeholder'].forEach((attr) => {
+    document.querySelectorAll(`[data-i18n-${attr}]`).forEach((el) => el.setAttribute(attr, t(el.getAttribute(`data-i18n-${attr}`))));
+  });
+  paintLangSwitch();
+  updateSoundButton();
+  if (!G.board.length) return;                       // jogo ainda não iniciado: nada dinâmico para repintar
+
+  paintSetup();
+  paintRules();
+  if (G.promo && $('modal-promotion').classList.contains('open')) openPromotion();
+  if ($('modal-online').classList.contains('open')) {
+    const typed = $('on-code') ? $('on-code').value : null;
+    openOnline();
+    if (typed && $('on-code')) $('on-code').value = typed;
+  }
+  paintGameOverText();
+  paintGameOver();
+  netUpdate();
+  render();
+}
+
+/* Auditoria para desenvolvedores: i18nAudit() no console lista as chaves ausentes de cada idioma em relação ao inglês */
+function i18nAudit() {
+  const flat = (o, p = '') => Object.entries(o).flatMap(([k, v]) => (typeof v === 'object' ? flat(v, `${p}${k}.`) : [`${p}${k}`]));
+  const base = flat(translations[DEFAULT_LANG]);
+  const report = {};
+  supportedLangs().filter((l) => l !== DEFAULT_LANG).forEach((l) => {
+    const have = new Set(flat(translations[l]));
+    report[l] = base.filter((k) => !have.has(k));
+  });
+  console.table(Object.fromEntries(Object.entries(report).map(([l, miss]) => [l, { missing: miss.length, keys: miss.join(', ') }])));
+  return report;
+}
+
+/* ==========================================================
    1. Constantes e utilidades
    ========================================================== */
 const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-const NAMES = { king: 'King', queen: 'Queen', rook: 'Rook', bishop: 'Bishop', knight: 'Knight', pawn: 'Pawn' };
+const NAMES = i18nDict('piece', ['king', 'queen', 'rook', 'bishop', 'knight', 'pawn']);   // getters: sempre no idioma atual
 const VALUE = { queen: 5, rook: 4, bishop: 3, knight: 2, pawn: 1, king: 0 };
-const SIDE_NAME = { white: 'White', black: 'Black' };
+const SIDE_NAME = i18nDict('side', ['white', 'black']);
 
 /* Regras opcionais da fusão. As regras estruturais (Rei não funde, no máximo duas peças
    por casa, unidade fundida não funde de novo) valem sempre e não aparecem aqui. */
-const RULE_DEFS = [
-  { key: 'noKnightQueen', title: 'Knight + Queen', short: 'Knight and Queen cannot fuse.' },
-  { key: 'noRookBishop',  title: 'Rook + Bishop',   short: 'Rook and Bishop cannot fuse.' },
-  { key: 'cooldown',      title: 'Fusion cooldown', short: 'After fusing, the next move cannot be a fusion.' },
-  { key: 'promoDiff',     title: 'Different promotion', short: 'A fused pawn can only become a piece different from its partner.' }
-];
-const MODE_LABEL = { balanced: 'Balanced', chaos: 'Chaos', custom: 'Custom' };
+const RULE_KEYS = ['noKnightQueen', 'noRookBishop', 'cooldown', 'promoDiff'];
+const RULE_DEFS = RULE_KEYS.map((key) => ({
+  key,
+  get title() { return t(`rules.${key}.title`); },
+  get short() { return t(`rules.${key}.short`); }
+}));
+const MODE_LABEL = i18nDict('mode', ['balanced', 'chaos', 'custom']);
 const allRules = (on) => Object.fromEntries(RULE_DEFS.map((d) => [d.key, on]));
 /* Regras efetivas de uma configuração: Balanceado = todas, Caos = nenhuma, Personalizado = escolha do jogador */
 const rulesFor = (s) => (s.mode === 'balanced' ? allRules(true) : s.mode === 'chaos' ? allRules(false) : { ...allRules(false), ...s.custom });
@@ -683,8 +1282,7 @@ function insufficientMaterial(board) {
 }
 
 function pieceLabel(p) {
-  const col = p.color === 'white' ? 'White' : 'Black';
-  return `${col} ${NAMES[p.type]}`;
+  return t(`pieceLabel.${p.color}.${p.type}`);
 }
 
 /* ==========================================================
@@ -791,11 +1389,14 @@ function playSound(name) {
   } catch (e) { console.warn('Audio unavailable:', e); }
 }
 
+function updateSoundButton() {
+  const btn = $('btn-sound');
+  btn.innerHTML = `${t('btn.sound')}<span class="snd"> ${t(soundEnabled ? 'btn.on' : 'btn.off')}</span>`;
+  btn.setAttribute('aria-pressed', String(soundEnabled));
+}
 function toggleSound() {
   soundEnabled = !soundEnabled;
-  const btn = $('btn-sound');
-  btn.innerHTML = `Sound<span class="snd"> ${soundEnabled ? 'on' : 'off'}</span>`;
-  btn.setAttribute('aria-pressed', String(soundEnabled));
+  updateSoundButton();
 }
 
 /* ==========================================================
@@ -825,10 +1426,11 @@ let pending = { ...setup, custom: { ...setup.custom } };
 
 const isAiTurn = () => !!G.ai && !!G.ai[G.turn] && !G.over;
 const bothAiControlled = () => !!G.ai && !!G.ai.white && !!G.ai.black;
-function aiLabelFor(color) { return G.ai && G.ai[color] ? AI_LEVELS[G.ai[color]].label : null; }
+const aiLevelLabel = (key) => t(`ai.${key}`);
+function aiLabelFor(color) { return G.ai && G.ai[color] ? aiLevelLabel(G.ai[color]) : null; }
 function sideDisplayName(color) {
   const lbl = aiLabelFor(color);
-  return lbl ? `${SIDE_NAME[color]} (${lbl})` : `${SIDE_NAME[color]} (you)`;
+  return lbl ? t('side.withLevel', { side: SIDE_NAME[color], level: lbl }) : t('side.you', { side: SIDE_NAME[color] });
 }
 
 function snapshot() {
@@ -1304,29 +1906,29 @@ function completeTurn() {
     G.over = true; G.result = { winner };
     lastEntry.check = '#';
     playSound('win');
-    const desc = !G.ai ? `${SIDE_NAME[winner]} won the game.`
-      : !G.ai[winner] ? 'You won the game.'
-      : bothAiControlled() ? `${sideDisplayName(winner)} won the game.`
-      : `The ${AI_LEVELS[G.ai[winner]].label} won the game.`;
-    showGameOver(winner, 'Checkmate', desc);
+    const desc = () => (!G.ai ? t('over.won.pvp', { side: SIDE_NAME[winner] })
+      : !G.ai[winner] ? t('over.won.you')
+      : bothAiControlled() ? t('over.won.both', { name: sideDisplayName(winner) })
+      : t('over.won.ai', { level: aiLevelLabel(G.ai[winner]) }));
+    showGameOver(winner, () => t('over.title.checkmate'), desc);
   } else if (!inCheck && !canMove) {
     G.over = true; G.result = { winner: null, reason: 'stalemate' };
-    showGameOver(null, 'Draw by stalemate', 'The player to move has no legal moves.');
+    showGameOver(null, () => t('over.title.stalemate'), () => t('over.desc.stalemate'));
   } else if (insufficientMaterial(G.board)) {
     G.over = true; G.result = { winner: null, reason: 'insufficient' };
     playSound('win');
-    showGameOver(null, 'Draw by insufficient material', 'Neither side has enough pieces left to deliver checkmate.');
+    showGameOver(null, () => t('over.title.insufficient'), () => t('over.desc.insufficient'));
   } else if (countRepetitions() >= 3) {
     // Corta loops infinitos de xeque/perseguição: mesma posição pela 3ª vez encerra a partida
     G.over = true; G.result = { winner: null, reason: 'repetition' };
     if (inCheck) lastEntry.check = '+';
     playSound('win');
-    showGameOver(null, 'Draw by repetition', 'The same position has occurred three times.');
+    showGameOver(null, () => t('over.title.repetition'), () => t('over.desc.repetition'));
   } else if (halfmoveClock() >= 100) {
     G.over = true; G.result = { winner: null, reason: 'fifty-move' };
     if (inCheck) lastEntry.check = '+';
     playSound('win');
-    showGameOver(null, 'Draw by the 50-move rule', '50 moves have passed for each side with no capture, fusion, or pawn move.');
+    showGameOver(null, () => t('over.title.fifty'), () => t('over.desc.fifty'));
   } else if (inCheck) {
     lastEntry.check = '+';
     playSound('check');
@@ -1355,7 +1957,7 @@ function render() {
   $('btn-ai-pause').hidden = !bothAi;
   $('btn-ai-step').hidden = !bothAi;
   if (bothAi) {
-    $('btn-ai-pause').textContent = G.aiPaused ? 'Resume' : 'Pause';
+    $('btn-ai-pause').textContent = G.aiPaused ? t('btn.resumeAi') : t('btn.pause');
     $('btn-ai-pause').disabled = G.over;
     $('btn-ai-step').disabled = G.over || !!G.promo || !G.aiPaused;
   }
@@ -1369,8 +1971,8 @@ function render() {
     $('review-play-icon').innerHTML = G.autoplay
       ? '<rect x="4" y="3" width="3" height="10"/><rect x="9" y="3" width="3" height="10"/>'
       : '<path d="M5 3 L13 8 L5 13 Z"/>';
-    $('btn-review-play').title = G.autoplay ? 'Pause' : 'Play';
-    $('review-pos').textContent = `Move ${G.viewIndex} / ${G.frames.length - 1}`;
+    $('btn-review-play').title = G.autoplay ? t('review.pause') : t('review.play');
+    $('review-pos').textContent = t('review.pos', { current: G.viewIndex, total: G.frames.length - 1 });
   }
 }
 
@@ -1392,13 +1994,14 @@ function renderMode() {
   const versus = G.gameMode === 'versus';
   chip.dataset.mode = versus ? 'versus' : G.mode;
   chip.innerHTML = versus
-    ? `Classic vs Fusion<small>Fusion: ${SIDE_NAME[other(G.classicSide)]}</small>`
-    : `${MODE_LABEL[G.mode]}<small>${activeRuleCount()} of ${RULE_DEFS.length} rules</small>`;
-  $('fusion-note-text').innerHTML = (versus
-    ? `<strong>Classic vs Fusion</strong>: ${SIDE_NAME[G.classicSide]} plays regular chess, with no fusions. ${SIDE_NAME[other(G.classicSide)]} can move a piece onto another of their own to fuse them. The classic side also has en passant (against unfused pawns); both sides can castle with a pure King and Rook.`
-    : '<strong>Rook + Knight</strong> move as a single unit: in straight lines and in an L. Move a piece onto another of yours to fuse them.')
-    + (G.rules.cooldown ? ' After a fusion, the next move cannot be a fusion.' : '')
-    + (versus ? '' : ' Castling is allowed only with a pure (unfused) King and Rook.');
+    ? `${t('mode.versus')}<small>${t('mode.versusSub', { side: SIDE_NAME[other(G.classicSide)] })}</small>`
+    : `${MODE_LABEL[G.mode]}<small>${t('mode.rulesCount', { active: activeRuleCount(), total: RULE_DEFS.length })}</small>`;
+  const parts = [versus
+    ? t('note.versus', { classic: SIDE_NAME[G.classicSide], fusion: SIDE_NAME[other(G.classicSide)] })
+    : t('note.fusion')];
+  if (G.rules.cooldown) parts.push(t('note.cooldown'));
+  if (!versus) parts.push(t('note.castling'));
+  $('fusion-note-text').innerHTML = parts.join(' ');
 }
 
 function renderBoard(focusKey) {
@@ -1415,6 +2018,7 @@ function renderBoard(focusKey) {
   const vc = (c) => (G.flipped ? 7 - c : c);
   const frag = document.createDocumentFragment();
   let toFocus = null;
+  const emptyLbl = t('a11y.empty'), fusedLbl = ` ${t('a11y.fusedWith')} `;
 
   for (let row = 0; row < 8; row++) {
     for (let col = 0; col < 8; col++) {
@@ -1427,7 +2031,7 @@ function renderBoard(focusKey) {
       sq.type = 'button';
       sq.className = `sq ${dark ? 'd' : 'l'}`;
       sq.dataset.r = r; sq.dataset.c = c;
-      sq.setAttribute('aria-label', `${sqName(r, c)}${cell.length ? ', ' + cell.map(pieceLabel).join(' fused with ') : ', empty'}`);
+      sq.setAttribute('aria-label', `${sqName(r, c)}, ${cell.length ? cell.map(pieceLabel).join(fusedLbl) : emptyLbl}`);
 
       if (lastMove && ((lastMove.from.r === r && lastMove.from.c === c) || (lastMove.to.r === r && lastMove.to.c === c))) sq.classList.add('last');
       if (selected && selected.r === r && selected.c === c) sq.classList.add('sel');
@@ -1484,17 +2088,17 @@ function fillTag(el, color) {
   const captured = reviewing ? frame.captured : G.captured;
   const caps = [...captured[color]].sort((a, b) => VALUE[b.type] - VALUE[a.type]);
   const isAi = !!G.ai && !!G.ai[color];
-  const role = !G.ai ? (NET.on && NET.color === color ? 'You' : '') : (isAi ? AI_LEVELS[G.ai[color]].label : 'You');
+  const role = !G.ai ? (NET.on && NET.color === color ? t('role.you') : '') : (isAi ? aiLevelLabel(G.ai[color]) : t('role.you'));
   const noFusion = active && !G.promo && mergeBlocked(color);
   const kind = G.classicSide ? (color === G.classicSide ? 'classic' : 'fusion') : '';
-  const state = reviewing ? '' : (checked ? 'in check' : (active ? (isAi && G.thinking ? 'thinking…' : (noFusion ? 'playing · no fusion' : 'playing')) : ''));
+  const state = reviewing ? '' : (checked ? t('tag.inCheck') : (active ? (isAi && G.thinking ? t('tag.thinking') : (noFusion ? t('tag.playingNoFusion') : t('tag.playing'))) : ''));
   el.innerHTML = `
     <span class="dot ${color === 'white' ? 'w' : 'b'}"></span>
     <span class="name">${SIDE_NAME[color]}</span>
     ${role ? `<span class="role">${role}</span>` : ''}
-    ${kind ? `<span class="role ${kind}">${kind === 'classic' ? 'Classic' : 'Fusion'}</span>` : ''}
+    ${kind ? `<span class="role ${kind}">${kind === 'classic' ? t('role.classic') : t('role.fusion')}</span>` : ''}
     <span class="state${checked ? ' alert' : ''}">${state}</span>
-    <span class="tray${caps.length ? ' has' : ''}" title="Captured pieces">${caps.map((p) => pieceSVG(p.type, p.color)).join('')}</span>`;
+    <span class="tray${caps.length ? ' has' : ''}" title="${t('a11y.captured')}">${caps.map((p) => pieceSVG(p.type, p.color)).join('')}</span>`;
 }
 
 function renderStatus() {
@@ -1502,45 +2106,43 @@ function renderStatus() {
   sub.classList.remove('alert');
 
   if (isReviewing()) {
-    title.textContent = 'Match review';
-    sub.innerHTML = `Move ${G.viewIndex} of ${G.frames.length - 1} <button type="button" class="btn mini" onclick="reviewJumpLive()">${G.over ? 'Go to result' : 'Back to current'}</button>`;
+    title.textContent = t('status.review');
+    sub.innerHTML = `${t('status.reviewSub', { current: G.viewIndex, total: G.frames.length - 1 })} <button type="button" class="btn mini" onclick="reviewJumpLive()">${G.over ? t('status.goResult') : t('status.backCurrent')}</button>`;
     return;
   }
 
   if (G.over) {
     if (G.result.reason === 'resignation') {
-      title.textContent = `${SIDE_NAME[G.result.winner]} wins`;
-      sub.textContent = `${SIDE_NAME[other(G.result.winner)]} resigned. Start a new game.`;
+      title.textContent = t('status.wins', { side: SIDE_NAME[G.result.winner] });
+      sub.textContent = t('status.resigned', { side: SIDE_NAME[other(G.result.winner)] });
     } else if (G.result.winner) {
-      title.textContent = `${SIDE_NAME[G.result.winner]} wins`;
-      sub.textContent = bothAiControlled() ? 'Checkmate. Start a new game.' : 'Checkmate. Use Undo or start a new game.';
+      title.textContent = t('status.wins', { side: SIDE_NAME[G.result.winner] });
+      sub.textContent = bothAiControlled() ? t('status.checkmateNew') : t('status.checkmateUndo');
     } else {
-      title.textContent = 'Draw';
-      sub.textContent = ({ stalemate: 'Stalemate: no legal moves.', repetition: 'Same position three times.', 'fifty-move': 'The 50-move rule.',
-        insufficient: 'Insufficient material to checkmate.' })[G.result.reason] || 'Draw.';
+      title.textContent = t('status.draw');
+      sub.textContent = ['stalemate', 'repetition', 'fifty-move', 'insufficient'].includes(G.result.reason)
+        ? t(`status.drawReason.${G.result.reason}`) : t('status.drawFallback');
     }
     return;
   }
-  title.textContent = `${SIDE_NAME[G.turn]}'s turn`;
+  title.textContent = t('status.turn', { side: SIDE_NAME[G.turn] });
   if (isKingInCheck(G.board, G.turn)) {
-    sub.textContent = isAiTurn() ? "The AI's king is in check." : 'Your king is in check.';
+    sub.textContent = isAiTurn() ? t('status.checkAi') : t('status.checkYou');
     sub.classList.add('alert');
   } else if (G.thinking) {
-    sub.textContent = 'The AI is thinking…';
+    sub.textContent = t('status.thinking');
   } else if (G.promo) {
-    sub.textContent = 'Choose the promotion piece.';
+    sub.textContent = t('status.promo');
   } else if (G.selected) {
     sub.textContent = G.legal.length
-      ? (!canFuse(G.turn)
-        ? 'Dot: move. Red ring: capture. Dashed ring: castle. Classic chess: no fusion.'
-        : mergeBlocked(G.turn)
-        ? 'Dot: move. Red ring: capture. Fusion blocked this turn.'
-        : 'Dot: move. Red ring: capture. Violet ring: fuse.')
-      : 'This piece has no legal moves right now.';
+      ? (!canFuse(G.turn) ? t('status.hintClassic')
+        : mergeBlocked(G.turn) ? t('status.hintBlocked')
+        : t('status.hintNormal'))
+      : t('status.noMoves');
   } else if (mergeBlocked(G.turn)) {
-    sub.textContent = `${SIDE_NAME[G.turn]} fused on the previous move: now they can only move or capture.`;
+    sub.textContent = t('status.mergeBlocked', { side: SIDE_NAME[G.turn] });
   } else {
-    sub.textContent = 'Tap a piece to see its moves.';
+    sub.textContent = t('status.tap');
   }
 }
 
@@ -1549,12 +2151,12 @@ function renderHistory() {
   $('move-count').textContent = G.history.length;
   $('btn-copy').disabled = !G.history.length;
   if (!G.history.length) {
-    list.innerHTML = `<li class="empty">Moves will appear here.</li>`;
+    list.innerHTML = `<li class="empty">${t('history.empty')}</li>`;
     return;
   }
   const cell = (h, isNew) => {
     if (!h) return '<span class="mv"></span>';
-    const sym = h.kind === 'merge' ? '<span class="sym fuse" aria-label="fused with">+</span>' : h.kind === 'capture' ? '<span class="sym cap">×</span>' : '<span class="sym">→</span>';
+    const sym = h.kind === 'merge' ? `<span class="sym fuse" aria-label="${t('a11y.fusedWith')}">+</span>` : h.kind === 'capture' ? '<span class="sym cap">×</span>' : '<span class="sym">→</span>';
     const extra = h.kind === 'merge' ? chipHTML([h.into], h.color)
       : h.kind === 'capture' ? chipHTML(h.taken, other(h.color)) + (h.ep ? '<span class="sym">e.p.</span>' : '')
       : h.kind === 'castle' ? `<span class="sym">${h.castle === 'K' ? 'O-O' : 'O-O-O'}</span>` : '';
@@ -1578,52 +2180,59 @@ const unitName = (types) => types.map((t) => NAMES[t]).join(' + ');
 /* Descreve uma jogada em texto: qual peça (ou unidade fundida) andou, o que foi fundido ou capturado */
 function describeMove(h) {
   const isUnit = h.pieces.length > 1;
-  const who = isUnit ? `${unitName(h.pieces)} (fused unit)` : NAMES[h.pieces[0]];
+  const who = isUnit ? t('desc.fusedUnit', { units: unitName(h.pieces) }) : NAMES[h.pieces[0]];
   let s;
 
   if (h.kind === 'castle') {
     const rank = h.color === 'white' ? 1 : 8, king = h.castle === 'K';
-    s = `CASTLING ${king ? 'kingside (O-O)' : 'queenside (O-O-O)'}: King ${h.from} → ${h.to}, Rook ${king ? 'h' : 'a'}${rank} → ${king ? 'f' : 'd'}${rank}`;
+    s = t('desc.castle', {
+      side: t(king ? 'desc.kingside' : 'desc.queenside'), king: NAMES.king, rook: NAMES.rook, from: h.from, to: h.to,
+      rookFrom: `${king ? 'h' : 'a'}${rank}`, rookTo: `${king ? 'f' : 'd'}${rank}`
+    });
   } else if (h.kind === 'merge') {
-    s = `FUSION: ${NAMES[h.pieces[0]]} ${h.from} fused with ${NAMES[h.into]} ${h.to} → unit ${NAMES[h.into]} + ${NAMES[h.pieces[0]]} at ${h.to}`;
+    s = t('desc.fusion', { a: NAMES[h.pieces[0]], b: NAMES[h.into], from: h.from, to: h.to });
   } else if (h.kind === 'capture') {
-    s = `${who} ${h.from} × ${h.to} (captured ${h.taken.length > 1 ? `unit ${unitName(h.taken)}` : NAMES[h.taken[0]]}${h.ep ? ', en passant' : ''})`;
+    const what = h.taken.length > 1 ? t('desc.capturedUnit', { units: unitName(h.taken) }) : NAMES[h.taken[0]];
+    s = t('desc.capture', { who, from: h.from, to: h.to, what, ep: h.ep ? t('desc.ep') : '' });
   } else {
-    s = `${who} ${h.from} → ${h.to}`;
+    s = t('desc.move', { who, from: h.from, to: h.to });
   }
 
   if (h.promo) {
     let done = false;
-    const after = h.pieces.map((t) => (!done && t === 'pawn' ? (done = true, h.promo) : t));
-    s += ` | Promotion: Pawn → ${NAMES[h.promo]}${after.length > 1 ? ` (unit now: ${unitName(after)})` : ''}`;
+    const after = h.pieces.map((ty) => (!done && ty === 'pawn' ? (done = true, h.promo) : ty));
+    s += t('desc.promotion', { pawn: NAMES.pawn, piece: NAMES[h.promo] })
+      + (after.length > 1 ? t('desc.promotionUnit', { units: unitName(after) }) : '');
   }
-  if (h.check === '#') s += ' | checkmate';
-  else if (h.check === '+') s += ' | check';
+  if (h.check === '#') s += t('desc.checkmate');
+  else if (h.check === '+') s += t('desc.check');
   return s;
 }
 
 function historyText() {
   const lines = [];
-  const you = G.ai ? `${sideDisplayName('white')} vs ${sideDisplayName('black')}` : 'White vs Black (two players)';
-  const drawLabel = { stalemate: 'draw by stalemate', repetition: 'draw by repetition', 'fifty-move': 'draw by the 50-move rule', insufficient: 'draw by insufficient material' };
-  const status = !G.over ? 'in progress'
-    : G.result.reason === 'resignation' ? `${SIDE_NAME[G.result.winner]} won by resignation (${SIDE_NAME[other(G.result.winner)]} resigned)`
-    : G.result.winner ? `checkmate, ${SIDE_NAME[G.result.winner]} won` : (drawLabel[G.result.reason] || 'draw');
+  const game = G.ai ? t('side.versus', { a: sideDisplayName('white'), b: sideDisplayName('black') }) : t('side.twoPlayers');
+  const winner = G.result && G.result.winner ? SIDE_NAME[G.result.winner] : '';
+  let status;
+  if (!G.over) status = t('hist.inProgress');
+  else if (G.result.reason === 'resignation') status = t('hist.resignation', { winner, loser: SIDE_NAME[other(G.result.winner)] });
+  else if (G.result.winner) status = t('hist.checkmate', { winner });
+  else status = t(`hist.draw.${['stalemate', 'repetition', 'fifty-move', 'insufficient'].includes(G.result.reason) ? G.result.reason : 'fallback'}`);
 
-  lines.push('FUSION CHESS: game history');
-  lines.push(`Game: ${you}`);
-  if (G.gameMode === 'versus') lines.push(`Mode: Classic vs Fusion (${SIDE_NAME[G.classicSide]} plays classic, ${SIDE_NAME[other(G.classicSide)]} plays Fusion)`);
+  lines.push(t('hist.title'));
+  lines.push(t('hist.game', { game }));
+  if (G.gameMode === 'versus') lines.push(t('hist.mode', { classic: SIDE_NAME[G.classicSide], fusion: SIDE_NAME[other(G.classicSide)] }));
   const active = RULE_DEFS.filter((d) => G.rules[d.key]).map((d) => d.title);
-  lines.push(`Rules: ${MODE_LABEL[G.mode]} (${active.length ? `active: ${active.join(', ')}` : 'no optional rules active'})`);
-  lines.push(`Status: ${status}`);
+  lines.push(t('hist.rules', { mode: MODE_LABEL[G.mode], detail: active.length ? t('hist.rulesActive', { list: active.join(', ') }) : t('hist.rulesNone') }));
+  lines.push(t('hist.status', { status }));
   lines.push('');
-  lines.push('MOVES');
+  lines.push(t('hist.moves'));
 
   for (let i = 0; i < G.history.length; i += 2) {
     const n = i / 2 + 1;
     const a = G.history[i], b = G.history[i + 1];
-    lines.push(`${n}. ${SIDE_NAME[a.color]}: ${describeMove(a)}`);
-    if (b) lines.push(`${' '.repeat(String(n).length + 2)}${SIDE_NAME[b.color]}: ${describeMove(b)}`);
+    lines.push(`${n}. ${t('hist.side', { side: SIDE_NAME[a.color], text: describeMove(a) })}`);
+    if (b) lines.push(`${' '.repeat(String(n).length + 2)}${t('hist.side', { side: SIDE_NAME[b.color], text: describeMove(b) })}`);
   }
 
   // Resumo das fusões de cada lado
@@ -1631,15 +2240,15 @@ function historyText() {
     .map((h, i) => ({ h, n: Math.floor(i / 2) + 1 }))
     .filter(({ h }) => h.kind === 'merge');
   lines.push('');
-  lines.push('FUSIONS');
+  lines.push(t('hist.fusions'));
   if (!merges.length) {
-    lines.push('No fusions so far.');
+    lines.push(t('hist.noFusions'));
   } else {
     ['white', 'black'].forEach((color) => {
       const mine = merges.filter(({ h }) => h.color === color);
-      lines.push(`${SIDE_NAME[color]}: ${mine.length
-        ? mine.map(({ h, n }) => `${NAMES[h.into]} + ${NAMES[h.pieces[0]]} at ${h.to} (move ${n})`).join('; ')
-        : 'none'}`);
+      lines.push(t('hist.side', { side: SIDE_NAME[color], text: mine.length
+        ? mine.map(({ h, n }) => t('hist.fusionItem', { into: NAMES[h.into], piece: NAMES[h.pieces[0]], to: h.to, n })).join('; ')
+        : t('hist.none') }));
     });
   }
   return lines.join('\n');
@@ -1666,16 +2275,16 @@ let copyTimer = null;
 async function copyHistory() {
   if (!G.history.length && !G.over) return;
   const ok = await writeClipboard(historyText());
-  const msg = ok ? 'Copied!' : 'Could not copy';
-  const side = { btn: $('btn-copy'), label: $('copy-label'), idle: 'Copy' };
-  const over = { btn: $('btn-copy-over'), label: $('btn-copy-over'), idle: 'Copy game history' };
+  const msg = ok ? t('btn.copied') : t('btn.copyFail');
+  const side = { btn: $('btn-copy'), label: $('copy-label'), idle: t('btn.copy') };
+  const over = { btn: $('btn-copy-over'), label: $('btn-copy-over'), idle: t('btn.copyHistory') };
   [side, over].forEach(({ btn, label, idle }) => {
     if (!btn) return;
     label.textContent = msg;
     btn.classList.toggle('done', ok);
     btn.classList.toggle('fail', !ok);
   });
-  const status = ok ? 'History copied to the clipboard.' : msg;
+  const status = ok ? t('history.copiedStatus') : msg;
   $('copy-status').textContent = status;
   $('copy-over-status').textContent = status;
   clearTimeout(copyTimer);
@@ -1715,13 +2324,13 @@ function openPromotion() {
   grid.innerHTML = '';
 
   $('promo-lead').textContent = partner && G.rules.promoDiff
-    ? `The pawn is fused with ${NAMES[partner.type]}: it must become a different piece.`
-    : 'Choose the new piece. The other half of the unit stays the same.';
+    ? t('promo.leadSame', { piece: NAMES[partner.type] })
+    : t('promo.lead');
 
   PROMO_TYPES.forEach((type) => {
     const block = promoBlock(partner && partner.type, type);
-    const note = block === 'same' ? `Already the fused piece`
-      : block === 'ban' ? `Can't fuse with ${NAMES[partner.type]}` : '';
+    const note = block === 'same' ? t('promo.already')
+      : block === 'ban' ? t('promo.ban', { piece: NAMES[partner.type] }) : '';
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'promo-btn';
@@ -1752,10 +2361,17 @@ function finishPromotion(type) {
   completeTurn();
 }
 
+/* title/desc são FUNÇÕES que devolvem o texto no idioma atual: assim o modal troca de idioma com ele aberto */
+let overMsg = null;
+function paintGameOverText() {
+  if (!overMsg) return;
+  $('over-title').textContent = overMsg.title();
+  $('over-desc').textContent = overMsg.desc();
+}
 function showGameOver(winner, title, desc) {
   closeModal('modal-resign');
-  $('over-title').textContent = title;
-  $('over-desc').textContent = desc;
+  overMsg = { title, desc };
+  paintGameOverText();
   $('over-medals').innerHTML = winner
     ? `<div class="medal">${pieceSVG('king', winner)}</div>`
     : `<div class="medal">${pieceSVG('king', 'white')}</div><div class="medal">${pieceSVG('king', 'black')}</div>`;
@@ -1782,9 +2398,9 @@ document.querySelectorAll('.overlay').forEach((o) => o.addEventListener('mousedo
 const AI_LEVELS = {
   // depth: profundidade máxima (aprofundamento iterativo) | quiesce: termina trocas de captura | tt: TT + null move
   // noise: erro na nota (centipeões) | blunder: chance de lance aleatório | timeMs: orçamento de tempo
-  easy:   { label: 'Easy AI',   depth: 2,  quiesce: false, tt: false, noise: 70, blunder: 0.08, timeMs: 400 },
-  medium: { label: 'Medium AI', depth: 5,  quiesce: true,  tt: true,  noise: 0,  blunder: 0,    timeMs: 1500 },
-  hard:   { label: 'Strong AI', depth: 14, quiesce: true,  tt: true,  noise: 0,  blunder: 0,    timeMs: 3000 }
+  easy:   { depth: 2,  quiesce: false, tt: false, noise: 70, blunder: 0.08, timeMs: 400 },
+  medium: { depth: 5,  quiesce: true,  tt: true,  noise: 0,  blunder: 0,    timeMs: 1500 },
+  hard:   { depth: 14, quiesce: true,  tt: true,  noise: 0,  blunder: 0,    timeMs: 3000 }
 };
 const SPEED_DELAY = { slow: 1400, normal: 450, fast: 120 };
 
@@ -2410,19 +3026,19 @@ function netUpdate() {
   let txt, extra = '';
   if (NET.state === 'reconnecting') {
     const left = Math.max(0, Math.ceil((NET.lostAt + NET_RECONNECT_MS - Date.now()) / 1000));
-    txt = `Connection lost · reconnecting… ${left}s (your game is safe)`;
+    txt = t('net.reconnectingLine', { seconds: left });
   } else if (NET.state === 'closed') {
-    txt = 'Your opponent did not come back.';
-    extra = `<button type="button" class="btn mini" onclick="netRetry()">${NET.host ? 'Keep waiting' : 'Try again'}</button>`;
+    txt = t('net.closedLine');
+    extra = `<button type="button" class="btn mini" onclick="netRetry()">${NET.host ? t('btn.keepWaiting') : t('btn.tryAgain')}</button>`;
   } else if (NET.state === 'connected') {
-    txt = `Online · room ${NET.code} · you play ${SIDE_NAME[NET.color] || '…'}`;
+    txt = t('net.onlineLine', { code: NET.code, side: SIDE_NAME[NET.color] || '…' });
     if (G.over) {
-      if (NET.rematch === 'received') { txt += ' · your opponent wants a rematch'; extra = '<button type="button" class="btn mini" onclick="playAgain()">Accept rematch</button>'; }
-      else if (NET.rematch === 'sent' || NET.rematch === 'accepted') txt += ' · waiting for opponent…';
+      if (NET.rematch === 'received') { txt += t('net.rematchWanted'); extra = `<button type="button" class="btn mini" onclick="playAgain()">${t('btn.acceptRematch')}</button>`; }
+      else if (NET.rematch === 'sent' || NET.rematch === 'accepted') txt += t('net.rematchWaiting');
     }
-  } else txt = `Room ${NET.code || ''} · ${NET.host ? 'waiting for your opponent' : 'connecting…'}`;
+  } else txt = t('net.roomLine', { code: NET.code || '', state: NET.host ? t('net.hostWaiting') : t('net.connecting') });
   const pill = NET.state === 'connected' || bad ? '<span class="net-ping" id="net-ping" role="status"></span>' : '';
-  el.innerHTML = `<span>${txt}</span>${pill}${extra}<button type="button" class="btn mini" onclick="netLeave()">Leave</button>`;
+  el.innerHTML = `<span>${txt}</span>${pill}${extra}<button type="button" class="btn mini" onclick="netLeave()">${t('btn.leave')}</button>`;
   netPaintPing();
 }
 /* Qualidade combina sinais PREDITIVOS (silêncio, ICE, offline) com o RTT medido */
@@ -2437,8 +3053,8 @@ function netPaintPing() {
   const el = $('net-ping'); if (!el) return;
   const q = netQuality();
   el.className = `net-ping q-${q}`;
-  el.textContent = q === 'off' ? 'offline' : NET.rtt == null ? '… ms' : `${NET.rtt} ms`;
-  el.title = `Connection: ${q}${NET.route ? ' · ' + NET.route : ''}${q === 'poor' ? ' (unstable: a drop may be coming)' : ''}`;
+  el.textContent = q === 'off' ? t('net.offline') : NET.rtt == null ? '… ms' : `${NET.rtt} ms`;
+  el.title = t('net.pingTitle', { quality: t(`net.quality.${q}`), route: NET.route ? ' · ' + t(`net.route.${NET.route}`) : '', unstable: q === 'poor' ? t('net.unstable') : '' });
 }
 
 /* Encerra tudo. Com graceful, a conexão só cai ~350 ms depois, para a última mensagem (ex.: resign) sair antes do close. */
@@ -2454,7 +3070,7 @@ function netReset(graceful) {
 function netFail(msg) { netReset(); NET.err = msg; openOnline(); }
 function netReady() {
   if (typeof Peer !== 'undefined') return true;
-  NET.err = 'Online mode needs an internet connection.'; openOnline(); return false;
+  NET.err = 'net.err.needInternet'; openOnline(); return false;
 }
 
 /* ---------- Hash de estado (anti-desync) ----------
@@ -2493,7 +3109,7 @@ function netHeartbeatStart(c) {
     if (now - NET.lastPing >= NET_PING_MS) netProbe();
     if (now - NET.lastStats >= 3000) { NET.lastStats = now; netPollStats(c); }
     const q = netQuality();
-    if (q === 'poor' && NET.q !== 'poor') toast('Unstable connection… the game will wait if it drops.');
+    if (q === 'poor' && NET.q !== 'poor') toast(t('net.toast.unstable'));
     NET.q = q; netPaintPing();
   }, 1000);
 }
@@ -2505,7 +3121,7 @@ async function netPollStats(c) {
     stats.forEach((s) => { if (s.type === 'local-candidate') locals[s.id] = s; if (s.type === 'candidate-pair' && (s.selected || (s.nominated && s.state === 'succeeded'))) pair = s; });
     if (NET.conn !== c || !pair) return;
     const lc = locals[pair.localCandidateId];
-    if (lc) NET.route = lc.candidateType === 'relay' ? 'relayed (TURN)' : 'direct (P2P)';
+    if (lc) NET.route = lc.candidateType === 'relay' ? 'relay' : 'direct';   // chave de net.route.*
   } catch (e) {}
 }
 /* Volta do segundo plano: não conta o tempo parada como silêncio; sonda na hora; se estava reconectando, tenta já */
@@ -2514,7 +3130,7 @@ document.addEventListener('visibilitychange', () => {
   if (NET.state === 'connected') { NET.lastRx = Date.now(); netProbe(); }
   else if (NET.state === 'reconnecting' && !NET.host) { NET.tries = 0; netScheduleRedial(); }
 });
-window.addEventListener('offline', () => { if (NET.on) { netPaintPing(); toast('You are offline. Waiting for the network…', true); } });
+window.addEventListener('offline', () => { if (NET.on) { netPaintPing(); toast(t('net.toast.offline'), true); } });
 window.addEventListener('online', () => {
   if (!NET.on) return;
   if (NET.state === 'connected') netProbe(); else if (NET.state === 'reconnecting' && !NET.host) { NET.tries = 0; netScheduleRedial(); }
@@ -2554,13 +3170,13 @@ function netPeerLost(c, reason) {
   netHeartbeatStop(); clearTimeout(NET.iceTimer); clearTimeout(NET.dialTimer);
   NET.conn = null;
   try { c.close(); } catch (e) {}
-  if (st === 'connected' && NET.started) { toast('Connection lost. Trying to reconnect…', true); netEnterReconnecting(); return; }
+  if (st === 'connected' && NET.started) { toast(t('net.toast.lost'), true); netEnterReconnecting(); return; }
   if (st === 'reconnecting') { netScheduleRedial(); return; }          // uma tentativa de rediscagem falhou: tenta de novo
   if (NET.host) { NET.state = 'waiting'; NET.rematch = null; }          // antes do 'start': a sala continua aberta
   else {
     netFail(/^(ICE|PC)/.test(reason)
-      ? 'Could not establish a connection. Your network (4G/corporate Wi-Fi) may block peer-to-peer traffic: a TURN relay server is needed.'
-      : 'Could not connect to the room. It may be full, or your network may be blocking the connection.');
+      ? 'net.err.ice'
+      : 'net.err.joinFail');
     return;
   }
   netUpdate(); paintGameOver(); render();
@@ -2608,8 +3224,8 @@ function netGuestPeerError(p, e) {
   if (NET.peer !== p) return;
   if (NET.state === 'reconnecting') { if (NET.conn && !NET.conn.open) netPeerLost(NET.conn, 'peer error ' + e.type); else if (!NET.conn) netScheduleRedial(); return; }
   if (NET.state === 'connected' || NET.state === 'closed') return;
-  netFail(e.type === 'peer-unavailable' ? 'Room not found. Check the code with the host.'
-    : NET_SIGNAL_ERRORS.includes(e.type) ? 'Could not reach the matchmaking server. Check your internet and try again.' : 'Could not connect. Check your connection and try again.');
+  netFail(e.type === 'peer-unavailable' ? 'net.err.roomNotFound'
+    : NET_SIGNAL_ERRORS.includes(e.type) ? 'net.err.signal' : 'net.err.generic');
 }
 
 /* Reconecta ao servidor de sinalização sem derrubar a partida (o canal de dados é independente) */
@@ -2673,8 +3289,8 @@ function createRoom(tries) {
     console.warn('[net] peer error:', e && e.type, e);
     if (NET.peer !== p) return;
     if (e.type === 'unavailable-id' && NET.state === 'opening' && tries < 5) { try { p.destroy(); } catch (x) {} createRoom(tries + 1); }
-    else if (NET.state === 'opening') netFail('Could not create the room. Check your connection and try again.');
-    else if (NET.state === 'waiting' && !NET_SIGNAL_ERRORS.includes(e.type)) netFail('The room was closed by an error. Create a new one.');
+    else if (NET.state === 'opening') netFail('net.err.createRoom');
+    else if (NET.state === 'waiting' && !NET_SIGNAL_ERRORS.includes(e.type)) netFail('net.err.roomClosed');
     // conectado/reconectando ou erro de sinalização: o canal de dados segue vivo, netKeepSignaling cuida do resto
   });
 }
@@ -2691,7 +3307,7 @@ function netOnIncoming(p, c) {
 }
 function joinRoom() {
   const code = (($('on-code') || {}).value || '').trim().toUpperCase();
-  if (code.length < 5) { NET.err = 'Type the 5-character room code.'; openOnline(); return; }
+  if (code.length < 5) { NET.err = 'net.err.codeShort'; openOnline(); return; }
   if (!netReady()) return;
   netReset(); NET.on = true; NET.host = false; NET.code = code; NET.state = 'joining';
   const p = new Peer(undefined, PEER_CONFIG); NET.peer = p;
@@ -2699,7 +3315,7 @@ function joinRoom() {
   let dialed = false;        // 'open' repete após reconexão ao broker: não pode discar duas vezes
   p.on('open', () => { if (dialed || NET.peer !== p || NET.state !== 'joining') return; dialed = true; netDial(p); });
   p.on('error', (e) => netGuestPeerError(p, e));
-  NET.timer = setTimeout(() => { if (NET.state === 'joining') netFail('Could not connect to the room. Check the code and your network, then try again. If it keeps failing, a TURN relay server may be required.'); }, NET_JOIN_MS);
+  NET.timer = setTimeout(() => { if (NET.state === 'joining') netFail('net.err.joinTimeout'); }, NET_JOIN_MS);
   NET.slowTimer = setTimeout(() => { if (NET.state === 'joining') { NET.slow = true; openOnline(); } }, 7000);
   netUpdate(); openOnline();
 }
@@ -2712,7 +3328,7 @@ function setupConn(c) {
     ['timer', 'graceTimer', 'dialTimer', 'redialTimer', 'slowTimer'].forEach((k) => clearTimeout(NET[k]));
     NET.state = 'connected'; NET.rematch = null; NET.tries = 0; NET.slow = false;
     netHeartbeatStart(c); netProbe(); netUpdate();
-    if (resuming) { closeModal('modal-online'); netSendResume(); toast('Connection restored.'); render(); }
+    if (resuming) { closeModal('modal-online'); netSendResume(); toast(t('net.toast.restored')); render(); }
     else if (NET.host) netStart(); else netSend({ t: 'hello' });
   };
   c.open ? opened() : c.on('open', opened);
@@ -2744,7 +3360,7 @@ function netOnData(m) {
     case 'rematch_req': netOnRematchReq(); break;
     case 'rematch_acc': netOnRematchAcc(); break;
     case 'rematch_deny': case 'rematch_cancel':   // libera o botão "preso": o outro lado desistiu/recusou
-      if (NET.rematch) { NET.rematch = null; netRematchChanged(); if (m.t === 'rematch_deny') toast('Your opponent cannot rematch right now.'); } break;
+      if (NET.rematch) { NET.rematch = null; netRematchChanged(); if (m.t === 'rematch_deny') toast(t('net.toast.rematchBusy')); } break;
     default: console.warn('[net] unknown message ignored:', m.t);
   }
 }
@@ -2804,8 +3420,8 @@ function netApplyMove(m) {
 /* Divergência detectada: o ANFITRIÃO é a autoridade. Ele reenvia a partida inteira; o convidado a pede. */
 function netDesync(why) {
   console.error('[net] DESYNC:', why);
-  if (++NET.resyncTries > 3) { toast('Game out of sync. Please leave the room and start a new one.', true); return; }
-  toast('Re-synchronising the game…');
+  if (++NET.resyncTries > 3) { toast(t('net.toast.outOfSync'), true); return; }
+  toast(t('net.toast.resync'));
   NET.host ? netSendResync() : netSend({ t: 'resync_req', why });
 }
 const netSendResume = () => netSend({ t: 'resume', n: G.history.length, h: netHash() });
@@ -2824,15 +3440,15 @@ function netOnMoves(m) {
   const fresh = m.list.slice(have - m.from);                // ignora o que já temos
   if (fresh.length && netReplay(fresh) !== fresh.length) { netDesync('catch-up replay rejected'); return; }
   if (typeof m.h === 'string' && m.h !== netHash()) { netDesync('hash mismatch after catch-up'); return; }
-  if (fresh.length) { toast('Back in sync.'); render(); }
+  if (fresh.length) { toast(t('net.toast.backInSync')); render(); }
 }
 function netOnResync(m) {                                    // só o convidado: reconstrói a partida a partir da lista do anfitrião
   if (NET.host || !Array.isArray(m.moves) || m.moves.length > NET_MAX_MOVES) return;
   closeModal('modal-promotion'); closeModal('modal-gameover');
   initGame();                                                // zera tabuleiro/histórico (mantém regras, cores e orientação)
   const ok = netReplay(m.moves) === m.moves.length && (typeof m.h !== 'string' || m.h === netHash());
-  if (!ok) { toast('Could not sync with the host. Leave the room and join again.', true); return; }
-  NET.resyncTries = 0; toast('Game re-synchronised.'); render();
+  if (!ok) { toast(t('net.toast.syncFail'), true); return; }
+  NET.resyncTries = 0; toast(t('net.toast.resynced')); render();
 }
 
 /* ---------- Desistência ---------- */
@@ -2866,7 +3482,7 @@ function netOnResign() {
   Object.assign(G, { promo: null, selected: null, legal: [], over: true, result: { winner: NET.color, reason: 'resignation' } });
   playSound('win');
   render();
-  showGameOver(NET.color, 'Opponent resigned', 'Your opponent resigned. You won the game.');
+  showGameOver(NET.color, () => t('over.title.resigned'), () => t('over.desc.resigned'));
 }
 function netLeave() {
   if (netInProgress()) { askResign('leave'); return; }
@@ -2876,13 +3492,13 @@ function netLeave() {
 /* ---------- Revanche ---------- */
 function paintGameOver() {
   const btn = $('btn-play-again'), note = $('over-net'); if (!btn || !note) return;
-  let label = 'Play again', disabled = false, msg = '';
+  let label = t('btn.playAgain'), disabled = false, msg = '';
   if (NET.on) {
-    if (NET.state === 'reconnecting') { label = 'Reconnecting…'; disabled = true; msg = 'Connection lost. Waiting for your opponent to come back…'; }
-    else if (NET.state !== 'connected') { label = 'Opponent left'; disabled = true; msg = 'Your opponent is no longer in the room, so a rematch is not possible.'; }
-    else if (NET.rematch === 'sent') { label = 'Cancel request'; msg = 'Rematch requested: waiting for your opponent. Colors will be swapped.'; }
-    else if (NET.rematch === 'accepted') { label = 'Starting rematch…'; disabled = true; }
-    else if (NET.rematch === 'received') { label = 'Accept rematch'; msg = 'Your opponent wants a rematch. Colors will be swapped.'; }
+    if (NET.state === 'reconnecting') { label = t('btn.reconnecting'); disabled = true; msg = t('net.over.reconnecting'); }
+    else if (NET.state !== 'connected') { label = t('btn.opponentLeft'); disabled = true; msg = t('net.over.left'); }
+    else if (NET.rematch === 'sent') { label = t('btn.cancelRequest'); msg = t('net.over.sent'); }
+    else if (NET.rematch === 'accepted') { label = t('btn.startingRematch'); disabled = true; }
+    else if (NET.rematch === 'received') { label = t('btn.acceptRematch'); msg = t('net.over.received'); }
   }
   btn.textContent = label; btn.disabled = disabled;
   note.hidden = !msg; note.textContent = msg;
@@ -2893,14 +3509,14 @@ function netRematchChanged() {
   if (NET.rematch === 'sent' || NET.rematch === 'accepted') {
     NET.rematchTimer = setTimeout(() => {
       if (NET.rematch !== 'sent' && NET.rematch !== 'accepted') return;
-      NET.rematch = null; toast('No answer to the rematch request. You can try again.', true); netRematchChanged();
+      NET.rematch = null; toast(t('net.toast.rematchTimeout'), true); netRematchChanged();
     }, NET_REMATCH_MS);
   }
   netUpdate(); paintGameOver();
 }
 function playAgain() {
   if (!NET.on) { closeModal('modal-gameover'); resetGame(); return; }
-  if (NET.state !== 'connected') { toast('Your opponent is no longer in the room.', true); paintGameOver(); return; }
+  if (NET.state !== 'connected') { toast(t('net.toast.opponentGone'), true); paintGameOver(); return; }
   if (!G.over) return;
   if (NET.rematch === 'sent') { NET.rematch = null; netSend({ t: 'rematch_cancel' }); netRematchChanged(); return; }   // cancela o próprio pedido
   if (NET.rematch === 'accepted') return;
@@ -2921,7 +3537,7 @@ function netOnRematchReq() {
   }
   NET.rematch = 'received';
   netRematchChanged();
-  toast('Your opponent wants a rematch.');
+  toast(t('net.toast.rematchWanted'));
   if (!document.querySelector('.overlay.open')) openModal('modal-gameover');
 }
 function netOnRematchAcc() {
@@ -2933,65 +3549,47 @@ function netRematchStart() {                              // só o anfitrião: t
   NET.cfg = { ...NET.cfg, hostColor: other(NET.cfg.hostColor) };
   netStart();
 }
-function copyRoomCode() { writeClipboard(NET.code).then((ok) => { const b = $('copy-room'); if (b) b.textContent = ok ? 'Copied!' : 'Could not copy'; }); }
+function copyRoomCode() { writeClipboard(NET.code).then((ok) => { const b = $('copy-room'); if (b) b.textContent = ok ? t('btn.copied') : t('btn.copyFail'); }); }
 
 function openOnline() {
-  const b = $('on-body'), t = $('on-title'), l = $('on-lead');
-  const err = NET.err ? `<p class="hint alert">${NET.err}</p>` : '';
+  const b = $('on-body'), title = $('on-title'), lead = $('on-lead');
+  const err = NET.err ? `<p class="hint alert">${t(NET.err)}</p>` : '';
   const foot = (...btns) => `<div class="foot">${btns.join('')}</div>`;
   const btn = (label, fn, cls = '', id = '') => `<button class="btn ${cls}"${id ? ` id="${id}"` : ''} onclick="${fn}">${label}</button>`;
   if (!NET.on) {
-    t.textContent = 'Join a room';
-    l.textContent = 'Type the code the host shared with you. No account needed.';
-    b.innerHTML = `<input class="code-in" id="on-code" maxlength="5" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="CODE" aria-label="Room code" onkeydown="if(event.key==='Enter')joinRoom()">${err}`
-      + foot(btn('Cancel', "closeModal('modal-online')"), btn('Join', 'joinRoom()', 'primary'));
+    title.textContent = t('online.title');
+    lead.textContent = t('online.lead');
+    b.innerHTML = `<input class="code-in" id="on-code" maxlength="5" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="${t('online.codePlaceholder')}" aria-label="${t('online.codeLabel')}" onkeydown="if(event.key==='Enter')joinRoom()">${err}`
+      + foot(btn(t('btn.cancel'), "closeModal('modal-online')"), btn(t('btn.join'), 'joinRoom()', 'primary'));
     NET.err = '';
   } else if (NET.state === 'reconnecting') {
-    t.textContent = 'Reconnecting…';
-    l.textContent = `Connection lost. Trying to get back into room ${NET.code} for up to ${NET_RECONNECT_MS / 1000} s. Your game is safe and paused.`;
-    b.innerHTML = foot(btn('Hide', "closeModal('modal-online')"), btn('Leave room', 'netLeave()'));
+    title.textContent = t('online.reconnectingTitle');
+    lead.textContent = t('online.reconnectingLead', { code: NET.code, seconds: NET_RECONNECT_MS / 1000 });
+    b.innerHTML = foot(btn(t('btn.hide'), "closeModal('modal-online')"), btn(t('btn.leaveRoom'), 'netLeave()'));
   } else if (NET.state === 'closed') {
-    t.textContent = NET.host ? 'Opponent disconnected' : 'Connection lost';
-    l.textContent = NET.host ? `Your opponent did not come back in time. The game is kept: they can still rejoin with code ${NET.code}.` : `Could not get back into room ${NET.code}. The game is kept: you can try again.`;
-    b.innerHTML = foot(btn(NET.host ? 'Keep waiting' : 'Try again', 'netRetry()', 'primary'), btn('Leave room', 'netLeave()'));
+    title.textContent = NET.host ? t('online.closedHostTitle') : t('online.closedGuestTitle');
+    lead.textContent = NET.host ? t('online.closedHostLead', { code: NET.code }) : t('online.closedGuestLead', { code: NET.code });
+    b.innerHTML = foot(btn(NET.host ? t('btn.keepWaiting') : t('btn.tryAgain'), 'netRetry()', 'primary'), btn(t('btn.leaveRoom'), 'netLeave()'));
   } else if (NET.host) {
-    t.textContent = 'Room created';
-    l.textContent = NET.state === 'opening' ? 'Creating the room…' : 'Send this code to your friend. The game starts as soon as they join. To change rules, close the room and start a new online game.';
-    b.innerHTML = `<div class="code-box">${NET.code || '·····'}</div>` + foot(btn('Copy code', 'copyRoomCode()', '', 'copy-room'), btn('Close room', 'netLeave()'));
+    title.textContent = t('online.hostTitle');
+    lead.textContent = NET.state === 'opening' ? t('online.opening') : t('online.hostLead');
+    b.innerHTML = `<div class="code-box">${NET.code || '·····'}</div>` + foot(btn(t('btn.copyCode'), 'copyRoomCode()', '', 'copy-room'), btn(t('btn.closeRoom'), 'netLeave()'));
   } else if (NET.state === 'connected') {
-    t.textContent = 'Connected';
-    l.textContent = `You are in room ${NET.code}, playing ${SIDE_NAME[NET.color] || '…'}.`;
-    b.innerHTML = foot(btn('Close', "closeModal('modal-online')"), btn('Leave room', 'netLeave()'));
+    title.textContent = t('online.connectedTitle');
+    lead.textContent = t('online.connectedLead', { code: NET.code, side: SIDE_NAME[NET.color] || '…' });
+    b.innerHTML = foot(btn(t('btn.close'), "closeModal('modal-online')"), btn(t('btn.leaveRoom'), 'netLeave()'));
   } else {
-    t.textContent = 'Joining…';
-    l.textContent = `Connecting to room ${NET.code}…`;
-    const slow = NET.slow ? '<p class="hint">Taking longer than usual. Some networks (4G, corporate Wi-Fi) need a relay; it can take up to 20 s.</p>' : '';
-    b.innerHTML = `${slow}${err}` + foot(btn('Cancel', 'netLeave()'));
+    title.textContent = t('online.joiningTitle');
+    lead.textContent = t('online.joiningLead', { code: NET.code });
+    const slow = NET.slow ? `<p class="hint">${t('online.slow')}</p>` : '';
+    b.innerHTML = `${slow}${err}` + foot(btn(t('btn.cancel'), 'netLeave()'));
   }
   openModal('modal-online');
   const inp = $('on-code'); if (inp) inp.focus();
 }
 
 /* ---------- Tela "Nova partida" ---------- */
-const OPP_HINT = {
-  human: 'Two players on the same device, each on their own turn.',
-  easy: 'Sees the opponent\'s reply and avoids losing pieces for free, but doesn\'t plan ahead and makes mistakes. Good for learning fusion.',
-  medium: 'Calculates three moves ahead (four in endgames), trades pieces wisely and fuses when it pays off. Takes up to 2 seconds per move.',
-  hard: 'Calculates four moves ahead (five in endgames) and plays very precisely. May take up to 3.5 seconds per move.',
-  online: 'Play a friend on another device. You get a room code to share; they type it in "Join room". No account needed.',
-  ai_vs_ai: 'The two AIs play each other on their own. Choose each side\'s difficulty and the speed below — you can pause and step through move by move whenever you like.'
-};
-
-const GM_HINT = {
-  fusion: 'Fusion Chess as usual: both sides can fuse pieces.',
-  versus: 'One side plays classic chess with the normal rules. The other plays Fusion Chess in Balanced mode. Works against a person, against the AI, or AI vs AI.'
-};
-
-const MODE_HINT = {
-  balanced: 'All rules on. More strategic fusions and evenly matched games.',
-  chaos: 'No rules on: any piece except the King fuses with any other, with no cooldown and no limits on promotion.',
-  custom: 'Choose below which rules are active in this game.'
-};
+/* Textos de ajuda da tela "Nova partida": setup.opponentHint.*, setup.gameHint.* e setup.modeHint.* em `translations` */
 
 function openSetup() {
   // Partida online em andamento: qualquer um dos dois jogadores precisa confirmar a desistência primeiro
@@ -3014,15 +3612,15 @@ function toggleRule(key) {
 }
 function paintSetup() {
   const versus = pending.gameMode === 'versus';
-  const roleOf = (color) => (color === pending.fusionSide ? 'Fusion' : 'Classic');
+  const roleOf = (color) => (color === pending.fusionSide ? t('role.fusion') : t('role.classic'));
   document.querySelectorAll('#seg-gamemode button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.gameMode)));
   document.querySelectorAll('#seg-fusionside button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.fusionSide)));
   $('field-fusionside').hidden = !versus;
   $('field-mode').hidden = versus;                       // no Clássico vs Fusion o modo é sempre Balanceado
-  $('gm-hint').textContent = GM_HINT[pending.gameMode];
+  $('gm-hint').textContent = t(`setup.gameHint.${pending.gameMode}`);
   document.querySelectorAll('#seg-side button').forEach((b) => { b.textContent = `${SIDE_NAME[b.dataset.v]}${versus ? ` · ${roleOf(b.dataset.v)}` : ''}`; });
-  $('lbl-ai-white').textContent = `White's difficulty${versus ? ` (${roleOf('white')})` : ''}`;
-  $('lbl-ai-black').textContent = `Black's difficulty${versus ? ` (${roleOf('black')})` : ''}`;
+  $('lbl-ai-white').textContent = `${t('setup.diff', { side: SIDE_NAME.white })}${versus ? ` (${roleOf('white')})` : ''}`;
+  $('lbl-ai-black').textContent = `${t('setup.diff', { side: SIDE_NAME.black })}${versus ? ` (${roleOf('black')})` : ''}`;
   document.querySelectorAll('#seg-opponent button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.opponent)));
   document.querySelectorAll('#seg-side button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.side)));
   document.querySelectorAll('#seg-mode button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.mode)));
@@ -3031,8 +3629,8 @@ function paintSetup() {
   document.querySelectorAll('#seg-ai-speed button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.v === pending.aiSpeed)));
   $('field-side').hidden = pending.opponent === 'human' || pending.opponent === 'ai_vs_ai';
   $('field-aivai').hidden = pending.opponent !== 'ai_vs_ai';
-  $('opp-hint').textContent = OPP_HINT[pending.opponent];
-  $('mode-hint').textContent = MODE_HINT[pending.mode];
+  $('opp-hint').textContent = t(`setup.opponentHint.${pending.opponent}`);
+  $('mode-hint').textContent = t(`setup.modeHint.${pending.mode}`);
 
   const flags = rulesFor(pending), editable = pending.mode === 'custom';
   $('rule-list').innerHTML = RULE_DEFS.map((d) => `
@@ -3047,28 +3645,24 @@ function applySetup() { setup = { ...pending, custom: { ...pending.custom } }; c
 const RULE_ART = {
   noKnightQueen: () => `${pieceSVG('knight', 'white')}<span class="arrow">✕</span>${pieceSVG('queen', 'white')}`,
   noRookBishop: () => `${pieceSVG('rook', 'white')}<span class="arrow">✕</span>${pieceSVG('bishop', 'white')}`,
-  cooldown: () => `<div class="piece" style="inset:0 0 14px">${unitHTML(['bishop', 'knight'], 'white')}</div><span class="badge">1 turn</span>`,
-  promoDiff: () => `<div class="piece" style="inset:0 0 14px">${unitHTML(['pawn', 'rook'], 'white')}</div><span class="badge">≠ Rook</span>`
+  cooldown: () => `<div class="piece" style="inset:0 0 14px">${unitHTML(['bishop', 'knight'], 'white')}</div><span class="badge">${t('rules.badgeCooldown')}</span>`,
+  promoDiff: () => `<div class="piece" style="inset:0 0 14px">${unitHTML(['pawn', 'rook'], 'white')}</div><span class="badge">${t('rules.badgePromo', { piece: NAMES.rook })}</span>`
 };
-const RULE_LONG = {
-  noKnightQueen: 'Knight and Queen never fuse. This also applies to promotion: Pawn + Knight cannot become Queen + Knight.',
-  noRookBishop: 'Rook and Bishop never fuse. This also applies to promotion: Pawn + Rook cannot become Bishop + Rook.',
-  cooldown: 'After fusing, your next move must be a regular move or a capture. Fused on your 1st move? You can only fuse again on your 3rd.',
-  promoDiff: 'On promotion, the fused pawn must become a piece different from its partner. Rook + Pawn, for example, can never become Rook + Rook.'
-};
-
-function openRules() {
+function paintRules() {
   $('rules-lead').textContent = G.gameMode === 'versus'
-    ? `One side plays classic chess, with no fusions. The other plays Fusion Chess and can fuse two of its pieces into one. In this game, ${SIDE_NAME[G.classicSide]} plays classic and ${SIDE_NAME[other(G.classicSide)]} plays Fusion.`
-    : 'Chess as usual, with one extra move: fuse two of your pieces into one.';
-  $('rules-head').innerHTML = `Rules for this game: ${MODE_LABEL[G.mode]} <span>(${activeRuleCount()} of ${RULE_DEFS.length} active)</span>`;
+    ? t('rules.leadVersus', { classic: SIDE_NAME[G.classicSide], fusion: SIDE_NAME[other(G.classicSide)] })
+    : t('rules.leadFusion');
+  $('rules-head').innerHTML = t('rules.head', { mode: MODE_LABEL[G.mode], active: activeRuleCount(), total: RULE_DEFS.length });
   $('rules-dynamic').innerHTML = RULE_DEFS.map((d) => {
     const on = !!G.rules[d.key];
     return `<div class="rule${on ? '' : ' off'}">
       <div class="art${d.key.startsWith('no') ? ' row' : ''}">${RULE_ART[d.key]()}</div>
-      <div><h3>${d.title} <span class="pill${on ? ' on' : ''}">${on ? 'Active' : 'Disabled'}</span></h3><p>${RULE_LONG[d.key]}</p></div>
+      <div><h3>${d.title} <span class="pill${on ? ' on' : ''}">${on ? t('rules.active') : t('rules.disabled')}</span></h3><p>${t(`rules.${d.key}.long`)}</p></div>
     </div>`;
   }).join('');
+}
+function openRules() {
+  paintRules();
   openModal('modal-rules');
 }
 
@@ -3085,7 +3679,7 @@ function paintStatic() {
   $('art-castle').innerHTML = `${pieceSVG('king', 'white')}<span class="arrow">⇄</span>${pieceSVG('rook', 'white')}`;
 }
 
-window.addEventListener('DOMContentLoaded', () => { paintStatic(); startGame(); });
+window.addEventListener('DOMContentLoaded', () => { buildLangSwitch(); updateLocalization(); paintStatic(); startGame(); });
 </script>
 </body>
 </html>
